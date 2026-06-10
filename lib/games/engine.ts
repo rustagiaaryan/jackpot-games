@@ -12,7 +12,6 @@ import {
   type HistoryEntry,
   type PublicSessionState,
   type HighLowSecret,
-  type DiceSecret,
   type DoorsSecret,
 } from "@/lib/games/types";
 import { startHighLow, applyHighLowGuess, highLowPublicState } from "@/lib/games/highlow";

@@ -84,18 +84,21 @@ body {
     @apply inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-medium text-white/85;
   }
 
-  .btn {
+  .btn,
+  .btn-gold,
+  .btn-ghost,
+  .btn-danger {
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-150 select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97];
   }
   .btn-gold {
-    @apply btn text-[#241a02] shadow-[0_4px_24px_rgba(246,197,68,0.35)] hover:shadow-[0_4px_34px_rgba(246,197,68,0.55)] hover:brightness-105;
+    @apply text-[#241a02] shadow-[0_4px_24px_rgba(246,197,68,0.35)] hover:shadow-[0_4px_34px_rgba(246,197,68,0.55)] hover:brightness-105;
     background: linear-gradient(160deg, #ffe9a8 0%, var(--gold) 38%, var(--gold-deep) 100%);
   }
   .btn-ghost {
-    @apply btn border border-white/15 bg-white/[0.05] text-white/90 hover:bg-white/[0.1] hover:border-white/25;
+    @apply border border-white/15 bg-white/[0.05] text-white/90 hover:bg-white/[0.1] hover:border-white/25;
   }
   .btn-danger {
-    @apply btn border border-red-400/30 bg-red-500/15 text-red-200 hover:bg-red-500/25;
+    @apply border border-red-400/30 bg-red-500/15 text-red-200 hover:bg-red-500/25;
   }
 
   .input {
