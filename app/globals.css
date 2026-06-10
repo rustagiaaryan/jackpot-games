@@ -1,26 +1,129 @@
 @import "tailwindcss";
 
+/* ── Jackpot Arcade theme ─────────────────────────────────────────────────
+   Dark, elegant game-room feel: deep night background, warm gold jackpot
+   accents, soft glows, rounded surfaces. */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #08080f;
+  --foreground: #ecedf4;
+  --gold: #f6c544;
+  --gold-deep: #d99a1f;
+  --felt: #11352a;
+  --velvet: #2a1140;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-gold: var(--gold);
+  --color-gold-deep: var(--gold-deep);
+  --color-felt: var(--felt);
+  --color-velvet: var(--velvet);
   --font-sans: var(--font-geist-sans);
+  --font-display: var(--font-sora);
   --font-mono: var(--font-geist-mono);
+
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-shimmer: shimmer 2.6s linear infinite;
+  --animate-glow-pulse: glowPulse 2.2s ease-in-out infinite;
+  --animate-pop-in: popIn 0.35s cubic-bezier(0.22, 1.4, 0.36, 1) both;
+  --animate-shake: shake 0.5s ease-in-out;
+  --animate-spin-slow: spin 9s linear infinite;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 14px 0 rgba(246, 197, 68, 0.35); }
+  50% { box-shadow: 0 0 34px 6px rgba(246, 197, 68, 0.6); }
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.7); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-9px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(4px); }
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(1100px 500px at 80% -10%, rgba(124, 58, 237, 0.16), transparent 60%),
+    radial-gradient(900px 420px at 10% 0%, rgba(217, 154, 31, 0.10), transparent 55%),
+    radial-gradient(1000px 700px at 50% 110%, rgba(16, 84, 60, 0.18), transparent 60%),
+    var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
 }
+
+@layer components {
+  .font-display {
+    font-family: var(--font-display, var(--font-sans)), ui-sans-serif, system-ui;
+  }
+
+  /* Frosted dark surface used for cards/panels everywhere */
+  .panel {
+    @apply rounded-2xl border border-white/10 bg-white/[0.045] backdrop-blur-sm shadow-[0_8px_32px_rgba(0,0,0,0.35)];
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-medium text-white/85;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-150 select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97];
+  }
+  .btn-gold {
+    @apply btn text-[#241a02] shadow-[0_4px_24px_rgba(246,197,68,0.35)] hover:shadow-[0_4px_34px_rgba(246,197,68,0.55)] hover:brightness-105;
+    background: linear-gradient(160deg, #ffe9a8 0%, var(--gold) 38%, var(--gold-deep) 100%);
+  }
+  .btn-ghost {
+    @apply btn border border-white/15 bg-white/[0.05] text-white/90 hover:bg-white/[0.1] hover:border-white/25;
+  }
+  .btn-danger {
+    @apply btn border border-red-400/30 bg-red-500/15 text-red-200 hover:bg-red-500/25;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-white/15 bg-white/[0.05] px-4 py-2.5 text-sm text-white placeholder-white/35 outline-none transition-colors focus:border-gold/60 focus:bg-white/[0.08];
+  }
+
+  .text-gold-shimmer {
+    background: linear-gradient(100deg, #b8860b 18%, #ffe9a8 38%, var(--gold) 50%, #ffe9a8 62%, #b8860b 82%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 3.2s linear infinite;
+  }
+
+  .gold-ring {
+    @apply ring-2 ring-gold/70 shadow-[0_0_24px_rgba(246,197,68,0.5)];
+  }
+}
+
+/* Slim, styled scrollbar for the revealed-cards tray and doors grid */
+.nice-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
+.nice-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); border-radius: 8px; }
+.nice-scroll::-webkit-scrollbar-thumb { background: rgba(246,197,68,0.35); border-radius: 8px; }
+.nice-scroll::-webkit-scrollbar-thumb:hover { background: rgba(246,197,68,0.55); }
+
+/* 3D helpers for card flips and dice */
+.preserve-3d { transform-style: preserve-3d; }
+.backface-hidden { backface-visibility: hidden; }
+.perspective-800 { perspective: 800px; }
+.perspective-1200 { perspective: 1200px; }
