@@ -1,0 +1,162 @@
+// Prisma schema — Jackpot Arcade
+//
+// DATABASE NOTE (PRODUCTION): SQLite is used for local development so the app
+// runs with zero external credentials. Before public launch, switch the
+// datasource to a managed Postgres (Neon / Supabase / RDS) by changing
+// `provider` to "postgresql" and setting DATABASE_URL accordingly.
+// All queries go through Prisma, so no application code changes are needed.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String        @id @default(cuid())
+  phone                String        @unique // E.164, never displayed publicly
+  displayName          String
+  createdAt            DateTime      @default(now())
+  lastLoginAt          DateTime      @default(now())
+  isAdmin              Boolean       @default(false)
+  agreedToTermsAt      DateTime?
+  // Anti-abuse
+  flagged              Boolean       @default(false)
+  flagReason           String?
+  banned               Boolean       @default(false)
+  playsSinceHumanCheck Int           @default(0)
+  humanCheckAnswer     String? // pending human-check answer (server-side only)
+  authSessions         AuthSession[]
+  gameSessions         GameSession[]
+  wins                 Win[]
+  payoutInfo           PayoutInfo?
+}
+
+model AuthSession {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([userId])
+}
+
+// One-time SMS verification codes. Codes are stored hashed.
+// PRODUCTION: the actual SMS delivery is mocked — see lib/sms.ts.
+model OtpCode {
+  id        String   @id @default(cuid())
+  phone     String
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  consumed  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+}
+
+// One row per game attempt. `secretState` holds the hidden outcomes
+// (shuffled deck / correct doors) and MUST NEVER be sent to the client.
+model GameSession {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameType        String // "highlow" | "dice" | "doors"
+  status          String    @default("active") // active | lost | won | abandoned
+  secretState     String // JSON — server-only hidden state
+  progress        Int       @default(0) // cards revealed / steps done / levels cleared
+  history         String    @default("[]") // JSON action log for replay & fraud review
+  suspicious      Boolean   @default(false)
+  suspicionReason String?
+  startedAt       DateTime  @default(now())
+  endedAt         DateTime?
+  lastActionAt    DateTime  @default(now())
+  dayKey          String // YYYY-MM-DD bucket for daily limits & leaderboards
+  win             Win?
+
+  @@index([userId, dayKey])
+  @@index([gameType, dayKey, status])
+}
+
+model Win {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameSessionId String      @unique
+  gameSession   GameSession @relation(fields: [gameSessionId], references: [id], onDelete: Cascade)
+  gameType      String
+  wonAt         DateTime    @default(now())
+  jackpotAmount Int
+  // pending | approved | paid | rejected | needs_review
+  payoutStatus  String      @default("pending")
+  reviewStatus  String      @default("needs_review")
+  fraudNotes    String?
+  // Snapshot of payout details the winner confirmed for THIS win
+  payoutMethod  String?
+  payoutHandle  String?
+  payoutName    String?
+  payoutNote    String?
+
+  @@index([userId])
+}
+
+model PayoutInfo {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  method    String // venmo | zelle | paypal | cashapp
+  handle    String
+  fullName  String
+  note      String?
+  updatedAt DateTime @updatedAt
+}
+
+model Sponsor {
+  id         String @id @default(cuid())
+  name       String
+  // Either an uploaded/hosted logo URL or a short text mark rendered as the logo
+  logoUrl    String?
+  websiteUrl String
+  tagline    String?
+  activeDate String // YYYY-MM-DD — the day this sponsor is shown
+  clickCount Int    @default(0)
+
+  @@index([activeDate])
+}
+
+model SponsorInquiry {
+  id             String   @id @default(cuid())
+  companyName    String
+  contactName    String
+  email          String
+  phone          String?
+  website        String?
+  budget         String?
+  preferredDates String?
+  message        String?
+  status         String   @default("new") // new | contacted | closed
+  createdAt      DateTime @default(now())
+}
+
+// In-app owner notifications (admin dashboard alerts).
+// PRODUCTION: lib/notifications.ts also has a TODO to send these via email.
+model OwnerNotification {
+  id        String   @id @default(cuid())
+  type      String // jackpot_win | suspicious_activity | sponsor_inquiry
+  title     String
+  body      String
+  payload   String   @default("{}") // JSON context blob
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// Site-wide configurable settings (e.g. jackpot amount).
+model Setting {
+  key   String @id
+  value String
+}
