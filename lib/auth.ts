@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { secureToken } from "@/lib/random";
 import type { User } from "@prisma/client";
 
-const SESSION_COOKIE = "jackpot_session";
+const SESSION_COOKIE = "arcade_session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
 
 export function hashCode(code: string): string {

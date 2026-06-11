@@ -47,17 +47,17 @@ export function PayoutSection({ initial }: { initial: PayoutValues | null }) {
   return (
     <form onSubmit={save} className="panel space-y-4 p-6">
       <div>
-        <span className="mb-1.5 block text-xs font-medium text-white/60">Preferred method</span>
+        <span className="mb-1.5 block text-xs font-bold text-white/85">Preferred method</span>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {PAYOUT_METHODS.map((m) => (
             <button
               key={m.value}
               type="button"
               onClick={() => setValues((v) => ({ ...v, method: m.value }))}
-              className={`rounded-xl border px-3 py-2 text-sm font-medium transition-all cursor-pointer ${
+              className={`rounded-xl border px-3 py-2 text-sm font-bold transition-all cursor-pointer ${
                 values.method === m.value
                   ? "border-gold/70 bg-gold/15 text-gold"
-                  : "border-white/15 bg-white/[0.04] text-white/65 hover:border-white/30"
+                  : "border-white/15 bg-white/[0.04] text-white/85 hover:border-white/30"
               }`}
             >
               {m.label}
@@ -67,7 +67,7 @@ export function PayoutSection({ initial }: { initial: PayoutValues | null }) {
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="handle" className="mb-1.5 block text-xs font-medium text-white/60">
+          <label htmlFor="handle" className="mb-1.5 block text-xs font-bold text-white/85">
             Payment handle / email / phone
           </label>
           <input
@@ -80,7 +80,7 @@ export function PayoutSection({ initial }: { initial: PayoutValues | null }) {
           />
         </div>
         <div>
-          <label htmlFor="fullName" className="mb-1.5 block text-xs font-medium text-white/60">
+          <label htmlFor="fullName" className="mb-1.5 block text-xs font-bold text-white/85">
             Full name
           </label>
           <input
@@ -94,7 +94,7 @@ export function PayoutSection({ initial }: { initial: PayoutValues | null }) {
         </div>
       </div>
       <div>
-        <label htmlFor="note" className="mb-1.5 block text-xs font-medium text-white/60">
+        <label htmlFor="note" className="mb-1.5 block text-xs font-bold text-white/85">
           Note (optional)
         </label>
         <input

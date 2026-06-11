@@ -83,9 +83,9 @@ export function LoginFlow() {
       <h1 className="font-display text-2xl font-extrabold">
         {step === "phone" ? "Create a free account to play" : "Check your phone"}
       </h1>
-      <p className="mt-1.5 text-sm text-white/55">
+      <p className="mt-1.5 text-base font-semibold text-white/85">
         {step === "phone"
-          ? "We verify every player with a real phone number to keep the jackpot fair."
+          ? "We verify every player with a real phone number to keep the prize pool fair and real."
           : `We sent a 6-digit code to ${phone}.`}
       </p>
 
@@ -100,7 +100,7 @@ export function LoginFlow() {
             className="mt-6 space-y-4"
           >
             <div>
-              <label htmlFor="phone" className="mb-1.5 block text-xs font-medium text-white/60">
+              <label htmlFor="phone" className="mb-1.5 block text-sm font-extrabold text-white/90">
                 Phone number
               </label>
               <input
@@ -114,10 +114,10 @@ export function LoginFlow() {
                 required
               />
             </div>
-            <button type="submit" disabled={busy} className="btn-gold w-full !py-3">
+            <button type="submit" disabled={busy} className="btn-win w-full !py-3.5">
               {busy ? "Sending…" : "Send verification code"}
             </button>
-            <p className="text-center text-[11px] leading-relaxed text-white/40">
+            <p className="text-center text-sm font-semibold leading-relaxed text-white/70">
               Free to play. No purchase necessary. By continuing you agree to our{" "}
               <Link href="/terms" className="underline hover:text-white/70">
                 Terms &amp; Conditions
@@ -141,7 +141,7 @@ export function LoginFlow() {
               </p>
             )}
             <div>
-              <label htmlFor="code" className="mb-1.5 block text-xs font-medium text-white/60">
+              <label htmlFor="code" className="mb-1.5 block text-sm font-extrabold text-white/90">
                 Verification code
               </label>
               <input
@@ -160,8 +160,8 @@ export function LoginFlow() {
             {isNewUser && (
               <>
                 <div>
-                  <label htmlFor="name" className="mb-1.5 block text-xs font-medium text-white/60">
-                    Display name <span className="text-white/35">(shown on leaderboards)</span>
+                  <label htmlFor="name" className="mb-1.5 block text-sm font-extrabold text-white/90">
+                    Display name <span className="text-white/70">(shown on leaderboards)</span>
                   </label>
                   <input
                     id="name"
@@ -174,7 +174,7 @@ export function LoginFlow() {
                     required
                   />
                 </div>
-                <label className="flex items-start gap-2.5 text-xs leading-relaxed text-white/60">
+                <label className="flex items-start gap-2.5 text-xs leading-relaxed text-white/85">
                   <input
                     type="checkbox"
                     checked={agree}
@@ -193,7 +193,7 @@ export function LoginFlow() {
               </>
             )}
 
-            <button type="submit" disabled={busy} className="btn-gold w-full !py-3">
+            <button type="submit" disabled={busy} className="btn-win w-full !py-3.5">
               {busy ? "Verifying…" : isNewUser ? "Create account & play" : "Log in"}
             </button>
             <button
@@ -203,7 +203,7 @@ export function LoginFlow() {
                 setCode("");
                 setError(null);
               }}
-              className="w-full text-center text-xs text-white/45 hover:text-white/70 cursor-pointer"
+              className="w-full text-center text-xs text-white/75 hover:text-white/85 cursor-pointer"
             >
               ← Different number
             </button>

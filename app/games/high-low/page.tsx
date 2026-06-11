@@ -3,7 +3,7 @@ import { HighLowGame } from "@/components/HighLowGame";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "High Low — Jackpot Arcade" };
+export const metadata = { title: "High Low — 1K Arcade" };
 
 export default async function HighLowPage() {
   const sponsor = await getTodaySponsor();

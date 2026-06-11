@@ -3,7 +3,7 @@ import { DiceGame } from "@/components/DiceGame";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Dice Sweep — Jackpot Arcade" };
+export const metadata = { title: "Dice Sweep — 1K Arcade" };
 
 export default async function DiceSweepPage() {
   const sponsor = await getTodaySponsor();

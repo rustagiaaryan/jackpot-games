@@ -104,7 +104,7 @@ export function CardBack({
                 size === "sm" ? "text-[6px]" : "text-[10px]"
               }`}
             >
-              {sponsorName ?? "JACKPOT ARCADE"}
+              {sponsorName ?? "1K ARCADE"}
             </span>
           )}
         </div>

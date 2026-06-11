@@ -4,11 +4,11 @@ import type { GameMeta } from "@/lib/games/meta";
 const PREVIEWS: Record<string, React.ReactNode> = {
   highlow: (
     <div className="flex items-end justify-center gap-2 pt-2">
-      <div className="h-16 w-11 -rotate-12 rounded-lg border border-white/20 bg-gradient-to-br from-violet-700 to-violet-950 shadow-lg" />
-      <div className="grid h-20 w-14 place-items-center rounded-lg border border-white/30 bg-white text-xl font-bold text-red-600 shadow-xl">
+      <div className="h-16 w-11 -rotate-12 rounded-lg border-2 border-white/25 bg-gradient-to-br from-violet to-[#3b1d77] shadow-lg" />
+      <div className="grid h-20 w-14 place-items-center rounded-lg border-2 border-white/40 bg-white text-xl font-extrabold text-red-600 shadow-xl">
         7♥
       </div>
-      <div className="h-16 w-11 rotate-12 rounded-lg border border-white/20 bg-gradient-to-br from-violet-700 to-violet-950 shadow-lg" />
+      <div className="h-16 w-11 rotate-12 rounded-lg border-2 border-white/25 bg-gradient-to-br from-violet to-[#3b1d77] shadow-lg" />
     </div>
   ),
   dice: (
@@ -26,37 +26,44 @@ const PREVIEWS: Record<string, React.ReactNode> = {
   ),
 };
 
-/** Game tile used on Home and Games pages: preview, rules vibe, jackpot label. */
+const ACCENTS: Record<string, string> = {
+  highlow: "hover:border-violet/70 hover:shadow-[0_14px_48px_rgba(160,107,255,0.25)]",
+  dice: "hover:border-win/70 hover:shadow-[0_14px_48px_rgba(0,230,92,0.22)]",
+};
+
+/** Game tile used on Home and Games pages: preview, vibe, prize label. */
 export function GameCard({
   meta,
   bestToday,
-  jackpot,
+  prize,
 }: {
   meta: GameMeta;
   bestToday?: string | null;
-  jackpot: number;
+  prize: number;
 }) {
   return (
     <Link
       href={`/games/${meta.slug}`}
-      className="panel group relative flex flex-col overflow-hidden p-5 transition-all duration-200 hover:-translate-y-1 hover:border-gold/40 hover:shadow-[0_12px_44px_rgba(246,197,68,0.15)]"
+      className={`panel group relative flex flex-col overflow-hidden p-5 transition-all duration-200 hover:-translate-y-1.5 ${ACCENTS[meta.type]}`}
     >
-      <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gold/10 blur-2xl transition-opacity opacity-0 group-hover:opacity-100" />
+      <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-win/15 blur-2xl transition-opacity opacity-0 group-hover:opacity-100" />
       <div className="h-24">{PREVIEWS[meta.type]}</div>
       <div className="mt-4 flex items-center justify-between gap-2">
-        <h3 className="font-display text-lg font-bold">
+        <h3 className="font-display text-2xl font-extrabold">
           {meta.emoji} {meta.name}
         </h3>
-        <span className="chip !py-0.5 border-violet-400/30 bg-violet-500/15 text-[10px] uppercase tracking-wide text-violet-200">
-          {meta.difficulty}
+        <span className="chip !py-1 border-cyan/50 bg-cyan/15 !text-xs uppercase tracking-wide text-cyan">
+          {meta.vibe}
         </span>
       </div>
-      <p className="mt-2 flex-1 text-sm leading-relaxed text-white/60">{meta.description}</p>
-      <div className="mt-4 flex items-center justify-between text-xs text-white/50">
-        <span className="text-gold/90 font-semibold">💰 ${jackpot.toLocaleString()} jackpot</span>
-        {bestToday && <span>Best today: {bestToday}</span>}
+      <p className="mt-2 flex-1 text-base font-semibold leading-relaxed text-white/85">
+        {meta.description}
+      </p>
+      <div className="mt-4 flex items-center justify-between text-sm font-bold">
+        <span className="text-gold">💰 WIN ${prize.toLocaleString()}</span>
+        {bestToday && <span className="text-white/75">Best today: {bestToday}</span>}
       </div>
-      <span className="btn-gold mt-4 w-full">Play {meta.name} →</span>
+      <span className="btn-win mt-4 w-full">PLAY {meta.name.toUpperCase()} →</span>
     </Link>
   );
 }

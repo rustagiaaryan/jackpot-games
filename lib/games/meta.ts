@@ -1,6 +1,10 @@
 import type { GameType } from "@/lib/games/types";
 
 // Client-safe display metadata for the games (no server imports).
+//
+// COPY RULES (PRD): never say "jackpot" — every winner gets the $1,000 prize,
+// no strings attached. Never describe the games as hard, impossible, or
+// unlikely — keep every word inviting and winnable.
 
 export interface GameMeta {
   type: GameType;
@@ -8,9 +12,11 @@ export interface GameMeta {
   name: string;
   emoji: string;
   tagline: string;
-  difficulty: string;
+  /** Positive vibe chip shown on game cards. */
+  vibe: string;
   description: string;
-  instructions: string;
+  /** Bold numbered rules shown bulletin-board style before play. */
+  rules: string[];
   /** Format a progress value for leaderboards / profiles, e.g. "23 cards". */
   bestLabel: (n: number) => string;
   winnerLabel: string;
@@ -23,12 +29,17 @@ export const GAME_META: Record<GameType, GameMeta> = {
     slug: "high-low",
     name: "High Low",
     emoji: "🃏",
-    tagline: "Call higher or lower through all 52 cards.",
-    difficulty: "Nearly impossible",
+    tagline: "Call it higher or lower. Ride the deck.",
+    vibe: "Trust your gut",
     description:
-      "One card starts face up. Guess if the next is higher or lower — Ace is low, equal cards lose. Survive the entire deck to win the jackpot.",
-    instructions:
-      "A shuffled 52-card deck is used and the first card starts face up. For each next card, guess whether it will be HIGHER or LOWER than the current card. Ace is low (A=1, K=13). A wrong guess ends the game — and an equal card loses automatically. Reveal all 52 cards to win the jackpot.",
+      "One card is face up. Call the next one higher or lower and keep the streak rolling. Make it through the deck and the $1,000 is yours.",
+    rules: [
+      "One card starts face up.",
+      "Call the next card HIGHER or LOWER.",
+      "Ace is the lowest. King is the highest.",
+      "A wrong call — or an equal card — ends the run.",
+      "Clear all 52 cards and you win $1,000. Instantly.",
+    ],
     bestLabel: (n) => `${n} card${n === 1 ? "" : "s"}`,
     winnerLabel: "WINNER — 52 cards completed",
     maxProgress: 52,
@@ -38,14 +49,19 @@ export const GAME_META: Record<GameType, GameMeta> = {
     slug: "dice-sweep",
     name: "Dice Sweep",
     emoji: "🎲",
-    tagline: "Three dice. Sweep every sum from 3 to 18. Never repeat.",
-    difficulty: "Brutally unlikely",
+    tagline: "Sweep every total from 3 to 18. Your roll, your way.",
+    vibe: "Ride the streak",
     description:
-      "Roll three dice and collect every sum from 3 to 18 — in any order. The moment you repeat a sum you've already collected, it's over.",
-    instructions:
-      "Roll three dice and collect every sum from 3 to 18, in any order. Each new sum lights up on the board. If you roll a sum you've already collected, the game ends. Sweep all 16 sums to win the jackpot.",
-    bestLabel: (n) => `${n} / 16 sums`,
-    winnerLabel: "WINNER — swept all 16 sums",
+      "Roll three dice and light up every total from 3 to 18, in any order. Roll all three at once or one at a time — sweep the board and win $1,000.",
+    rules: [
+      "Each turn you roll three dice — all at once, or one at a time for the slow reveal.",
+      "Every total from 3 to 18 is on your board.",
+      "Roll a NEW total → it locks in gold. Keep rolling.",
+      "Roll a total you already locked → the run ends.",
+      "Light up all 16 totals and you win $1,000. Instantly.",
+    ],
+    bestLabel: (n) => `${n} / 16 totals`,
+    winnerLabel: "WINNER — swept all 16 totals",
     maxProgress: 16,
   },
 };

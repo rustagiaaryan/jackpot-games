@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 
-// Client session context: who is logged in, plays remaining, jackpot.
+// Client session context: who is logged in, plays remaining, prize.
 // Hydrated from GET /api/me; games push fresh play counts into it after
 // every server response so the nav chip stays accurate without polling.
 
@@ -27,7 +27,7 @@ export interface MeData {
   playsUsedToday?: number;
   playsRemaining?: number;
   dailyLimit: number;
-  jackpot: number;
+  prize: number;
 }
 
 interface SessionContextValue {

@@ -1,25 +1,38 @@
 @import "tailwindcss";
 
-/* ── Jackpot Arcade theme ─────────────────────────────────────────────────
-   Dark, elegant game-room feel: deep night background, warm gold jackpot
-   accents, soft glows, rounded surfaces. */
+/* ── 1K Arcade theme ──────────────────────────────────────────────────────
+   Stake-inspired: deep blue-green casino base, loud neon accents, chunky
+   bold typography. Money is GOLD, winning is GREEN, everything is readable
+   and out there — no thin, faint text anywhere. */
 
 :root {
-  --background: #08080f;
-  --foreground: #ecedf4;
-  --gold: #f6c544;
-  --gold-deep: #d99a1f;
-  --felt: #11352a;
-  --velvet: #2a1140;
+  --background: #0c1a26;
+  --surface: #152736;
+  --surface-2: #1b3242;
+  --foreground: #f4f7fb;
+  --gold: #ffd23f;
+  --gold-deep: #f5a818;
+  --win: #00e65c;
+  --win-deep: #00a843;
+  --cyan: #29d8ff;
+  --violet: #a06bff;
+  --pink: #ff5c8a;
+  --danger: #ff4d6d;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
   --color-foreground: var(--foreground);
   --color-gold: var(--gold);
   --color-gold-deep: var(--gold-deep);
-  --color-felt: var(--felt);
-  --color-velvet: var(--velvet);
+  --color-win: var(--win);
+  --color-win-deep: var(--win-deep);
+  --color-cyan: var(--cyan);
+  --color-violet: var(--violet);
+  --color-pink: var(--pink);
+  --color-danger: var(--danger);
   --font-sans: var(--font-geist-sans);
   --font-display: var(--font-sora);
   --font-mono: var(--font-geist-mono);
@@ -30,6 +43,8 @@
   --animate-pop-in: popIn 0.35s cubic-bezier(0.22, 1.4, 0.36, 1) both;
   --animate-shake: shake 0.5s ease-in-out;
   --animate-spin-slow: spin 9s linear infinite;
+  --animate-marquee: marquee 14s linear infinite;
+  --animate-border-spin: borderSpin 3.2s linear infinite;
 }
 
 @keyframes float {
@@ -41,8 +56,8 @@
   100% { background-position: 200% center; }
 }
 @keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 14px 0 rgba(246, 197, 68, 0.35); }
-  50% { box-shadow: 0 0 34px 6px rgba(246, 197, 68, 0.6); }
+  0%, 100% { box-shadow: 0 0 14px 0 rgba(255, 210, 63, 0.4); }
+  50% { box-shadow: 0 0 34px 6px rgba(255, 210, 63, 0.65); }
 }
 @keyframes popIn {
   from { opacity: 0; transform: scale(0.7); }
@@ -55,6 +70,13 @@
   60% { transform: translateX(-6px); }
   80% { transform: translateX(4px); }
 }
+/* Scrolling sponsor strip: content is duplicated, slide one copy's width. */
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+@keyframes borderSpin {
+  to { transform: rotate(360deg); }
+}
 
 html {
   scroll-behavior: smooth;
@@ -62,12 +84,13 @@ html {
 
 body {
   background:
-    radial-gradient(1100px 500px at 80% -10%, rgba(124, 58, 237, 0.16), transparent 60%),
-    radial-gradient(900px 420px at 10% 0%, rgba(217, 154, 31, 0.10), transparent 55%),
-    radial-gradient(1000px 700px at 50% 110%, rgba(16, 84, 60, 0.18), transparent 60%),
+    radial-gradient(1100px 520px at 85% -10%, rgba(160, 107, 255, 0.16), transparent 60%),
+    radial-gradient(900px 460px at 8% -5%, rgba(0, 230, 92, 0.10), transparent 55%),
+    radial-gradient(1100px 700px at 50% 115%, rgba(41, 216, 255, 0.10), transparent 60%),
     var(--background);
   color: var(--foreground);
   font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+  font-weight: 500;
 }
 
 @layer components {
@@ -75,38 +98,45 @@ body {
     font-family: var(--font-display, var(--font-sans)), ui-sans-serif, system-ui;
   }
 
-  /* Frosted dark surface used for cards/panels everywhere */
+  /* Chunky raised surface used for cards/panels everywhere */
   .panel {
-    @apply rounded-2xl border border-white/10 bg-white/[0.045] backdrop-blur-sm shadow-[0_8px_32px_rgba(0,0,0,0.35)];
+    @apply rounded-2xl border-2 border-white/[0.08] bg-surface shadow-[0_10px_36px_rgba(0,0,0,0.45)];
   }
 
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-medium text-white/85;
+    @apply inline-flex items-center gap-1.5 rounded-full border-2 border-white/15 bg-surface-2 px-3.5 py-1 text-sm font-bold text-white;
   }
 
   .btn,
+  .btn-win,
   .btn-gold,
   .btn-ghost,
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-150 select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97];
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-base font-extrabold tracking-wide transition-all duration-150 select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.96] active:translate-y-0.5;
   }
+  /* Primary CTA: big juicy win-green */
+  .btn-win {
+    @apply text-[#02240f] shadow-[0_5px_0_var(--win-deep),0_10px_30px_rgba(0,230,92,0.35)] hover:brightness-110 hover:shadow-[0_5px_0_var(--win-deep),0_12px_42px_rgba(0,230,92,0.55)];
+    background: linear-gradient(165deg, #7dffb0 0%, var(--win) 40%, #00c24f 100%);
+  }
+  /* Money CTA: prize gold */
   .btn-gold {
-    @apply text-[#241a02] shadow-[0_4px_24px_rgba(246,197,68,0.35)] hover:shadow-[0_4px_34px_rgba(246,197,68,0.55)] hover:brightness-105;
-    background: linear-gradient(160deg, #ffe9a8 0%, var(--gold) 38%, var(--gold-deep) 100%);
+    @apply text-[#2b1d00] shadow-[0_5px_0_var(--gold-deep),0_10px_30px_rgba(255,210,63,0.35)] hover:brightness-110 hover:shadow-[0_5px_0_var(--gold-deep),0_12px_42px_rgba(255,210,63,0.55)];
+    background: linear-gradient(165deg, #ffe9a3 0%, var(--gold) 42%, #f0a31a 100%);
   }
   .btn-ghost {
-    @apply border border-white/15 bg-white/[0.05] text-white/90 hover:bg-white/[0.1] hover:border-white/25;
+    @apply border-2 border-white/20 bg-white/[0.07] text-white shadow-[0_4px_0_rgba(0,0,0,0.35)] hover:bg-white/[0.14] hover:border-white/35;
   }
   .btn-danger {
-    @apply border border-red-400/30 bg-red-500/15 text-red-200 hover:bg-red-500/25;
+    @apply border-2 border-red-400/40 bg-red-500/20 text-red-100 hover:bg-red-500/30;
   }
 
   .input {
-    @apply w-full rounded-xl border border-white/15 bg-white/[0.05] px-4 py-2.5 text-sm text-white placeholder-white/35 outline-none transition-colors focus:border-gold/60 focus:bg-white/[0.08];
+    @apply w-full rounded-xl border-2 border-white/15 bg-[#0e1f2c] px-4 py-3 text-base font-semibold text-white placeholder-white/40 outline-none transition-colors focus:border-win/70 focus:bg-[#102433];
   }
 
   .text-gold-shimmer {
-    background: linear-gradient(100deg, #b8860b 18%, #ffe9a8 38%, var(--gold) 50%, #ffe9a8 62%, #b8860b 82%);
+    background: linear-gradient(100deg, #d99a12 15%, #ffe9a3 38%, var(--gold) 50%, #fff3c4 62%, #d99a12 85%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     background-clip: text;
@@ -115,17 +145,20 @@ body {
   }
 
   .gold-ring {
-    @apply ring-2 ring-gold/70 shadow-[0_0_24px_rgba(246,197,68,0.5)];
+    @apply ring-2 ring-gold/80 shadow-[0_0_28px_rgba(255,210,63,0.55)];
+  }
+  .win-ring {
+    @apply ring-2 ring-win/80 shadow-[0_0_28px_rgba(0,230,92,0.5)];
   }
 }
 
-/* Slim, styled scrollbar for the revealed-cards tray and doors grid */
+/* Slim, styled scrollbar for the revealed-cards tray */
 .nice-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
-.nice-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); border-radius: 8px; }
-.nice-scroll::-webkit-scrollbar-thumb { background: rgba(246,197,68,0.35); border-radius: 8px; }
-.nice-scroll::-webkit-scrollbar-thumb:hover { background: rgba(246,197,68,0.55); }
+.nice-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 8px; }
+.nice-scroll::-webkit-scrollbar-thumb { background: rgba(0,230,92,0.4); border-radius: 8px; }
+.nice-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0,230,92,0.6); }
 
-/* 3D helpers for card flips and dice */
+/* 3D helpers for card flips and dice cubes */
 .preserve-3d { transform-style: preserve-3d; }
 .backface-hidden { backface-visibility: hidden; }
 .perspective-800 { perspective: 800px; }

@@ -1,8 +1,8 @@
-import { getJackpotAmount } from "@/lib/settings";
+import { getPrizeAmount } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Terms & Conditions — Jackpot Arcade" };
+export const metadata = { title: "Terms & Conditions — 1K Arcade" };
 
 // ⚠️ LEGAL NOTE (PRODUCTION): These Terms and Conditions are a working draft
 // written for product development. They MUST be reviewed by a qualified
@@ -10,17 +10,18 @@ export const metadata = { title: "Terms & Conditions — Jackpot Arcade" };
 // publicly launched with real-money prizes.
 
 export default async function TermsPage() {
-  const jackpot = await getJackpotAmount();
-  const j = `$${jackpot.toLocaleString()}`;
+  const prize = await getPrizeAmount();
+  const p = `$${prize.toLocaleString()}`;
 
   const sections: { title: string; body: React.ReactNode }[] = [
     {
       title: "1. The Service",
       body: (
         <>
-          Jackpot Arcade offers <b>free-to-play</b> jackpot games. No purchase or payment is
-          necessary to play or to win. The current jackpot is <b>{j}</b>. A user wins by fully
-          completing one of the games according to the official rules below.
+          1K Arcade offers <b>free-to-play</b> games with a real cash prize. No purchase or
+          payment is necessary to play or to win. The prize for beating any game is <b>{p}</b>,
+          and <b>every verified winner receives it</b> — it is not a shared pot and it never
+          runs out. A user wins by fully completing a game according to the official rules below.
         </>
       ),
     },
@@ -29,14 +30,14 @@ export default async function TermsPage() {
       body: (
         <ul className="list-disc space-y-1.5 pl-5">
           <li>
-            <b>High Low:</b> a shuffled 52-card deck; Ace is low (A=1, K=13). Guess whether each
-            next card is higher or lower. A wrong guess or an equal-rank card ends the game.
+            <b>High Low:</b> a shuffled 52-card deck; Ace is low (A=1, K=13). Call whether each
+            next card is higher or lower. A wrong call or an equal-rank card ends the run.
             Revealing all 52 cards wins.
           </li>
           <li>
-            <b>Dice Sweep:</b> roll three dice and collect every sum from 3 to 18, in any
-            order. Rolling a sum that has already been collected ends the game. Collecting all
-            16 sums wins.
+            <b>Dice Sweep:</b> roll three dice — all at once or one at a time — and collect
+            every total from 3 to 18 in any order. Rolling a total that has already been
+            collected ends the run. Collecting all 16 totals wins.
           </li>
         </ul>
       ),
@@ -46,11 +47,10 @@ export default async function TermsPage() {
       body: (
         <>
           Winners choose their preferred payout method: <b>Venmo, Zelle, PayPal, or Cash App</b>.
-          Verified wins are paid <b>within one month</b> of verification. The site owner may
-          review any win — including the full game session replay — before payout, and may
-          request additional identity verification. The user is responsible for providing
-          accurate payout information; the site is not responsible for delays caused by
-          incorrect payout details.
+          Verified wins are paid <b>within one month</b>. The site owner may review any win —
+          including the full game session replay — before payout, and may request additional
+          identity verification. The user is responsible for providing accurate payout
+          information; the site is not responsible for delays caused by incorrect payout details.
         </>
       ),
     },
@@ -71,9 +71,8 @@ export default async function TermsPage() {
       title: "5. Daily Limit",
       body: (
         <>
-          Each account is limited to <b>500 total game attempts per day</b> across all games.
-          The limit resets daily and exists to keep the games fair and protect the jackpot
-          system.
+          Each account gets <b>500 game plays per day</b> across all games. The limit resets
+          daily and keeps the games fair for everyone.
         </>
       ),
     },
@@ -100,7 +99,7 @@ export default async function TermsPage() {
       title: "8. Changes",
       body: (
         <>
-          The jackpot amount may be updated in the future. These terms may change; continued use
+          The prize amount may be updated in the future. These terms may change; continued use
           of the site after changes constitutes acceptance.
         </>
       ),
@@ -109,21 +108,21 @@ export default async function TermsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="font-display text-3xl font-extrabold sm:text-4xl">
-        Terms &amp; Conditions<span className="text-gold">.</span>
+      <h1 className="font-display text-4xl font-extrabold sm:text-5xl">
+        Terms &amp; Conditions<span className="text-win">.</span>
       </h1>
-      <p className="mt-2 text-sm text-white/55">
-        The short version: it’s free, play fair, complete a game and we pay you {j}.
+      <p className="mt-2 text-lg font-bold text-white/90">
+        The short version: it’s free, play fair, beat a game and we pay you {p}.
       </p>
 
-      <div className="panel mt-8 space-y-7 p-7 text-sm leading-relaxed text-white/75">
+      <div className="panel mt-8 space-y-7 p-7 text-base font-semibold leading-relaxed text-white/90">
         {sections.map((s) => (
           <section key={s.title}>
-            <h2 className="font-display mb-2 text-base font-bold text-white">{s.title}</h2>
+            <h2 className="font-display mb-2 text-xl font-extrabold text-white">{s.title}</h2>
             <div>{s.body}</div>
           </section>
         ))}
-        <p className="border-t border-white/10 pt-5 text-xs text-white/40">
+        <p className="border-t-2 border-white/10 pt-5 text-sm font-semibold text-white/60">
           Draft for development. To be reviewed by a qualified attorney before public launch
           with real-money prizes. Last updated June 2026.
         </p>

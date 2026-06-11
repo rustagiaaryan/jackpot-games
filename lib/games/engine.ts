@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { getDayKey } from "@/lib/day";
-import { DAILY_PLAY_LIMIT, getJackpotAmount } from "@/lib/settings";
+import { DAILY_PLAY_LIMIT, getPrizeAmount } from "@/lib/settings";
 import { humanCheckDue, issueHumanCheck, recordActionTiming } from "@/lib/antibot";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { notifyOwner } from "@/lib/notifications";
@@ -41,12 +41,12 @@ export async function playsUsedToday(userId: string): Promise<number> {
 
 interface Ctx {
   playsUsedToday: number;
-  jackpot: number;
+  prize: number;
 }
 
 async function buildCtx(userId: string): Promise<Ctx> {
-  const [used, jackpot] = await Promise.all([playsUsedToday(userId), getJackpotAmount()]);
-  return { playsUsedToday: used, jackpot };
+  const [used, prize] = await Promise.all([playsUsedToday(userId), getPrizeAmount()]);
+  return { playsUsedToday: used, prize };
 }
 
 function toPublic(session: GameSession, ctx: Ctx): PublicSessionState {
@@ -58,7 +58,7 @@ function toPublic(session: GameSession, ctx: Ctx): PublicSessionState {
     progress: session.progress,
     playsUsedToday: ctx.playsUsedToday,
     playsRemaining: Math.max(0, DAILY_PLAY_LIMIT - ctx.playsUsedToday),
-    jackpot: ctx.jackpot,
+    prize: ctx.prize,
   };
   const lost = status === "lost";
   if (session.gameType === "highlow") {
@@ -67,16 +67,15 @@ function toPublic(session: GameSession, ctx: Ctx): PublicSessionState {
   } else if (session.gameType === "dice") {
     const secret = JSON.parse(session.secretState) as DiceSecret;
     const history = JSON.parse(session.history) as HistoryEntry[];
-    const rolls = history.filter((h) => h.t === "roll");
-    const last = rolls[rolls.length - 1];
+    const turns = history.filter((h) => h.t === "roll" && h.sum !== undefined);
+    const last = turns[turns.length - 1];
     base.dice = dicePublicState(
       secret,
       last
         ? {
-            d1: last.d1 as number,
-            d2: last.d2 as number,
-            d3: last.d3 as number,
+            dice: last.turnDice as number[],
             sum: last.sum as number,
+            collected: last.collected as boolean,
           }
         : null
     );
@@ -246,21 +245,33 @@ export async function highLowGuess(
   );
 }
 
-export async function diceRoll(user: User, sessionId: string): Promise<ActionOutcome> {
+export async function diceRoll(
+  user: User,
+  sessionId: string,
+  mode: "one" | "all"
+): Promise<ActionOutcome> {
   const session = await loadActiveSession(user, sessionId, "dice");
   const secret = JSON.parse(session.secretState) as DiceSecret;
-  const r = applyDiceRoll(secret);
+  const r = applyDiceRoll(secret, mode);
   return finalizeAction(
     user,
     session,
-    { t: "roll", at: Date.now(), d1: r.d1, d2: r.d2, d3: r.d3, sum: r.sum, collected: r.collected },
+    {
+      t: "roll",
+      at: Date.now(),
+      mode,
+      rolled: r.rolled,
+      turnDice: r.turnDice,
+      sum: r.sum,
+      collected: r.collectedSum,
+    },
     { progress: r.newProgress, won: r.won, lost: r.lost, secret },
     {
-      d1: r.d1,
-      d2: r.d2,
-      d3: r.d3,
-      sum: r.sum,
-      collected: r.collected,
+      rolled: r.rolled,
+      turnDice: r.turnDice,
+      turnComplete: r.turnComplete,
+      sum: r.sum ?? null,
+      collected: r.collectedSum ?? null,
       sumsCollected: r.newProgress,
       won: r.won,
       lost: r.lost,
@@ -276,7 +287,7 @@ const GAME_NAMES: Record<GameType, string> = {
 };
 
 async function recordWin(user: User, session: GameSession): Promise<void> {
-  const jackpot = await getJackpotAmount();
+  const prize = await getPrizeAmount();
   const payout = await db.payoutInfo.findUnique({ where: { userId: user.id } });
 
   // Every win starts in needs_review: the owner verifies the session replay
@@ -286,7 +297,7 @@ async function recordWin(user: User, session: GameSession): Promise<void> {
       userId: user.id,
       gameSessionId: session.id,
       gameType: session.gameType,
-      jackpotAmount: jackpot,
+      prizeAmount: prize,
       payoutStatus: "pending",
       reviewStatus: "needs_review",
       fraudNotes: session.suspicious ? session.suspicionReason : null,
@@ -299,14 +310,14 @@ async function recordWin(user: User, session: GameSession): Promise<void> {
   const gameName = GAME_NAMES[session.gameType as GameType];
   await notifyOwner({
     type: "jackpot_win",
-    title: `🏆 JACKPOT WIN — ${user.displayName} completed ${gameName}!`,
+    title: `🏆 $${prize} WIN — ${user.displayName} beat ${gameName}!`,
     body: [
       `Player: ${user.displayName}`,
       `Phone: ${user.phone} (masked publicly as ${maskPhone(user.phone)})`,
       `Game: ${gameName}`,
       `Won at: ${new Date().toISOString()}`,
       `Session: ${session.id}`,
-      `Jackpot: $${jackpot}`,
+      `Prize: $${prize}`,
       `Payout info on file: ${payout ? `${payout.method} — ${payout.handle} (${payout.fullName})` : "none yet"}`,
       `Fraud indicators: ${session.suspicious ? session.suspicionReason : "none detected"}`,
     ].join("\n"),

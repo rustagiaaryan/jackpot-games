@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Sora } from "next/font/google";
 import "./globals.css";
-import { getJackpotAmount } from "@/lib/settings";
+import { getPrizeAmount } from "@/lib/settings";
 import { getTodaySponsor } from "@/lib/sponsor";
 import { SessionProvider } from "@/components/SessionProvider";
 import { SponsorBanner } from "@/components/SponsorBanner";
@@ -13,19 +13,19 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 const sora = Sora({ variable: "--font-sora", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Jackpot Arcade — Two games. One $1,000 jackpot.",
+  title: "1K Arcade — Beat a game. Win $1,000.",
   description:
-    "Free-to-play jackpot mini-games. Complete High Low or Dice Sweep to win the $1,000 jackpot.",
+    "Free-to-play arcade games with a real $1,000 prize. Beat High Low or Dice Sweep and the money is yours — no strings attached.",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#08080f",
+  themeColor: "#0c1a26",
 };
 
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [jackpot, sponsor] = await Promise.all([getJackpotAmount(), getTodaySponsor()]);
+  const [prize, sponsor] = await Promise.all([getPrizeAmount(), getTodaySponsor()]);
 
   return (
     <html
@@ -34,20 +34,24 @@ export default async function RootLayout({
     >
       <body className="min-h-screen flex flex-col">
         <SessionProvider>
-          <SponsorBanner
-            sponsor={
-              sponsor
-                ? {
-                    id: sponsor.id,
-                    name: sponsor.name,
-                    logoUrl: sponsor.logoUrl,
-                    websiteUrl: sponsor.websiteUrl,
-                    tagline: sponsor.tagline,
-                  }
-                : null
-            }
-          />
-          <NavBar initialJackpot={jackpot} />
+          {/* Sponsor banner + nav travel together and stay pinned on every
+              page — the sponsor is always on screen (PRD §7.1). */}
+          <div className="sticky top-0 z-40">
+            <SponsorBanner
+              sponsor={
+                sponsor
+                  ? {
+                      id: sponsor.id,
+                      name: sponsor.name,
+                      logoUrl: sponsor.logoUrl,
+                      websiteUrl: sponsor.websiteUrl,
+                      tagline: sponsor.tagline,
+                    }
+                  : null
+              }
+            />
+            <NavBar initialPrize={prize} />
+          </div>
           <main className="flex-1">{children}</main>
           <Footer />
         </SessionProvider>

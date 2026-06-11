@@ -1,21 +1,20 @@
-# 🎰 Jackpot Arcade
+# 🕹️ 1K Arcade
 
-Free-to-play jackpot mini-games. Players verify a phone number, then try two
-"nearly impossible" challenges — complete either one and win the **$1,000 jackpot**
-(configurable). Built from [PRD.md](./PRD.md) (Doors game since removed; dice
-game redesigned to Dice Sweep).
+Free-to-play arcade games with a real **$1,000 prize**. Players verify a phone
+number, pick a game, and if they beat it the money is theirs — every winner
+gets paid, no strings attached. Built from [PRD.md](./PRD.md) (v2).
 
-| Game | Win condition | Odds-ish |
-| --- | --- | --- |
-| 🃏 **High Low** | Call higher/lower through all 52 cards (Ace low, equal loses) | astronomically rare |
-| 🎲 **Dice Sweep** | Roll 3 dice and collect **every sum 3–18 in any order** — repeating a collected sum loses | ~1 in 733 million |
+| Game | Win condition |
+| --- | --- |
+| 🃏 **High Low** | Call higher/lower through all 52 cards (Ace low, equal ends the run) |
+| 🎲 **Dice Sweep** | Roll 3 dice — all at once or one at a time — and lock in **every total 3–18 in any order**; repeating a locked total ends the run |
 
 ## Stack
 
 - **Next.js 16** (App Router, Turbopack) + **TypeScript**
-- **Tailwind CSS 4** — dark casino theme, custom animation utilities
-- **Framer Motion** + **canvas-confetti** — card flips, dice tumbles, door
-  transitions, abyss falls, win celebrations
+- **Tailwind CSS 4** — bold, colorful Stake-inspired theme
+- **Framer Motion** + **canvas-confetti** — 3D card flips, real tumbling 3D
+  dice cubes, sponsor-bordered loss popups, confetti win celebrations
 - **Prisma 6 + SQLite** locally (swap to Postgres for production — schema is portable)
 - **Zod** for API input validation
 
@@ -34,7 +33,7 @@ server console).
 
 **Admin dashboard:** log in with **`+1 555 555 0100`** (set by `ADMIN_PHONE`),
 then visit `/admin` — winner review queue with full session replays, sponsor
-management, sponsor inquiries, jackpot control, analytics.
+management, sponsor inquiries, prize control, analytics.
 
 Other scripts: `npm run build` · `npm start` · `npm run lint` · `npm run db:reset`
 
@@ -45,7 +44,7 @@ See [.env.example](./.env.example) for full docs. Highlights:
 | Var | Default | Purpose |
 | --- | --- | --- |
 | `DATABASE_URL` | `file:./dev.db` | SQLite locally; Postgres URL in production |
-| `JACKPOT_AMOUNT` | `1000` | Initial jackpot (live-editable from `/admin`) |
+| `PRIZE_AMOUNT` | `1000` | Per-win prize (live-editable from `/admin`) |
 | `MOCK_SMS` | `true` | Mock SMS mode; flip to `false` once Twilio is wired in `lib/sms.ts` |
 | `ADMIN_PHONE` | `+15555550100` | Phone number that gets admin access |
 | `OWNER_EMAIL` | `rustagiaaryan@gmail.com` | Where owner notifications are addressed |
@@ -55,15 +54,16 @@ See [.env.example](./.env.example) for full docs. Highlights:
 
 - **Hidden outcomes never reach the client.** Each attempt is a `GameSession`
   row whose `secretState` column holds the server-authoritative state (the
-  shuffled deck / collected sums). API responses are built only from `Public*`
-  types ([lib/games/types.ts](lib/games/types.ts)). Dice rolls are generated
-  server-side *at roll time*, so future rolls never exist anywhere. All
-  randomness is `crypto.randomInt` (CSPRNG), never `Math.random`.
+  shuffled deck / locked totals / mid-turn dice). API responses are built only
+  from `Public*` types ([lib/games/types.ts](lib/games/types.ts)). Every die is
+  generated server-side *at roll time*, so future rolls never exist anywhere.
+  All randomness is `crypto.randomInt` (CSPRNG), never `Math.random`.
 - **Sessions can't be replayed or forged.** Finished sessions reject further
   actions; starting a new game abandons any active one (multi-tab/refresh safe);
   every action is appended to a timestamped history used for win review.
+  Refresh resumes the active session, including mid-turn dice.
 - **500 plays/day** enforced at game start (an in-flight game may finish —
-  PRD §23.4). Displayed live in the nav with the info popover.
+  PRD §17). Displayed live in the nav with the info popover.
 - **Anti-bot layers:** sliding-window rate limits (OTP per phone+IP, game-start
   cooldown + burst caps, action caps), an arithmetic human check every 25 games
   (Turnstile swap point in [lib/antibot.ts](lib/antibot.ts)), and play-speed
@@ -78,8 +78,9 @@ See [.env.example](./.env.example) for full docs. Highlights:
 ```
 app/                  pages (home, games, game pages, leaderboards, profile,
                       login, terms, privacy, sponsor, admin) + API routes
-components/           UI: nav/sponsor banner/footer, login flow, game shell,
-                      the two games, payout forms, admin dashboard
+components/           UI: pinned sponsor banner, nav, login flow, game shell
+                      with bulletin rules, the two games, 3D dice, loss popup,
+                      payout forms, admin dashboard
 lib/                  auth, sms, phone, rate limiting, anti-bot, notifications,
                       settings, leaderboards, stats
 lib/games/            engines: highlow / dice + session orchestration

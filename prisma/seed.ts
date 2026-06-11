@@ -24,9 +24,9 @@ async function main() {
 
   // Jackpot setting
   await db.setting.upsert({
-    where: { key: "jackpotAmount" },
+    where: { key: "prizeAmount" },
     update: {},
-    create: { key: "jackpotAmount", value: process.env.JACKPOT_AMOUNT ?? "1000" },
+    create: { key: "prizeAmount", value: process.env.PRIZE_AMOUNT ?? "1000" },
   });
 
   // Admin/owner account — log in with this phone (code 123456 in mock mode)
@@ -110,7 +110,7 @@ async function main() {
     }
   }
 
-  console.log("✅ Seeded: jackpot setting, admin user, today's sponsor, demo leaderboard data");
+  console.log("✅ Seeded: prize setting, admin user, today's sponsor, demo leaderboard data");
   console.log(`   Admin login: ${adminPhone} (verification code 123456 in mock mode)`);
 }
 

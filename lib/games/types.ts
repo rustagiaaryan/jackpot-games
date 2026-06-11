@@ -35,30 +35,38 @@ export interface PublicHighLowState {
 }
 
 // ── Dice Sweep ──────────────────────────────────────────────────────────────
-// Three dice. Collect every sum from 3 to 18 in ANY order; rolling a sum you
-// already collected ends the game. All 16 sums = win.
+// Three dice per turn. Collect every total from 3 to 18 in ANY order; rolling
+// a total you already collected ends the game. All 16 totals = win.
+// For extra thrill the player chooses HOW to roll each turn: all three dice
+// at once, or one die at a time (each die is a separate server roll).
 
 export const DICE_MIN_SUM = 3;
 export const DICE_MAX_SUM = 18;
 export const DICE_TOTAL_SUMS = DICE_MAX_SUM - DICE_MIN_SUM + 1; // 16
 
-/** All sums in display order: 3, 4, … 18. */
+/** All totals in display order: 3, 4, … 18. */
 export const DICE_SUMS: readonly number[] = Array.from(
   { length: DICE_TOTAL_SUMS },
   (_, i) => DICE_MIN_SUM + i
 );
 
+export type DiceRollMode = "one" | "all";
+
 export interface DiceSecret {
-  /** Sums collected so far. Server-authoritative; each roll is generated at
+  /** Totals collected so far. Server-authoritative; each die is generated at
    *  roll time, never ahead. */
   collected: number[];
+  /** Dice already rolled in the current (incomplete) turn — 0 to 2 values. */
+  pending: number[];
 }
 
 export interface PublicDiceState {
-  collected: number[]; // sums already rolled (the player's own history)
+  collected: number[]; // totals already rolled (the player's own history)
   sumsCollected: number; // == progress; 16 = win
   totalSums: number;
-  lastRoll: { d1: number; d2: number; d3: number; sum: number } | null;
+  /** Current turn's dice so far (already revealed to the player). */
+  pending: number[];
+  lastTurn: { dice: number[]; sum: number; collected: boolean } | null;
 }
 
 // ── Shared envelope ─────────────────────────────────────────────────────────
@@ -72,7 +80,7 @@ export interface PublicSessionState {
   progress: number;
   playsUsedToday: number;
   playsRemaining: number;
-  jackpot: number;
+  prize: number;
   highlow?: PublicHighLowState;
   dice?: PublicDiceState;
 }

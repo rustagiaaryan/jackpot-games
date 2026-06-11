@@ -1,4 +1,4 @@
-export const metadata = { title: "Privacy — Jackpot Arcade" };
+export const metadata = { title: "Privacy — 1K Arcade" };
 
 // ⚠️ LEGAL NOTE (PRODUCTION): like the Terms, this privacy policy is a
 // development draft and must be reviewed by a qualified attorney before launch.
@@ -42,7 +42,7 @@ export default function PrivacyPage() {
             account deletion by contacting support.
           </p>
         </section>
-        <p className="border-t border-white/10 pt-5 text-xs text-white/40">
+        <p className="border-t border-white/10 pt-5 text-xs text-white/70">
           Draft for development — to be reviewed by counsel before public launch.
         </p>
       </div>

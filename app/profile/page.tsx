@@ -4,17 +4,17 @@ import { db } from "@/lib/db";
 import { maskPhone } from "@/lib/phone";
 import { getUserGameStats } from "@/lib/stats";
 import { playsUsedToday } from "@/lib/games/engine";
-import { DAILY_PLAY_LIMIT, getJackpotAmount } from "@/lib/settings";
+import { DAILY_PLAY_LIMIT, getPrizeAmount } from "@/lib/settings";
 import { GAME_META } from "@/lib/games/meta";
 import { PayoutSection } from "@/components/PayoutSection";
 import type { GameType } from "@/lib/games/types";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "My Profile — Jackpot Arcade" };
+export const metadata = { title: "My Profile — 1K Arcade" };
 
 const STAT_ROWS: { key: "totalAttempts" | "bestEver" | "bestToday" | "average" | "wins"; label: string }[] = [
-  { key: "totalAttempts", label: "Total attempts" },
+  { key: "totalAttempts", label: "Total plays" },
   { key: "bestEver", label: "Best ever" },
   { key: "bestToday", label: "Best today" },
   { key: "average", label: "Average" },
@@ -25,10 +25,10 @@ export default async function ProfilePage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/profile");
 
-  const [stats, used, jackpot, wins, payout] = await Promise.all([
+  const [stats, used, prize, wins, payout] = await Promise.all([
     getUserGameStats(user.id),
     playsUsedToday(user.id),
-    getJackpotAmount(),
+    getPrizeAmount(),
     db.win.findMany({ where: { userId: user.id }, orderBy: { wonAt: "desc" } }),
     db.payoutInfo.findUnique({ where: { userId: user.id } }),
   ]);
@@ -39,53 +39,55 @@ export default async function ProfilePage() {
     <div className="mx-auto max-w-5xl px-4 py-12">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <span className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-violet-500/50 to-violet-900/60 font-display text-2xl font-extrabold">
+          <span className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-violet/70 to-[#3b1d77] font-display text-3xl font-extrabold">
             {user.displayName.slice(0, 1).toUpperCase()}
           </span>
           <div>
-            <h1 className="font-display text-2xl font-extrabold sm:text-3xl">
+            <h1 className="font-display text-3xl font-extrabold sm:text-4xl">
               {user.displayName}
-              {wins.length > 0 && <span title="Jackpot winner"> 👑</span>}
+              {wins.length > 0 && <span title="Winner"> 👑</span>}
             </h1>
-            <p className="mt-0.5 text-sm text-white/55">
-              Phone: {maskPhone(user.phone)} <span className="text-emerald-400">✓ verified</span>
+            <p className="mt-0.5 text-base font-bold text-white/85">
+              {maskPhone(user.phone)} <span className="text-win">✓ verified</span>
             </p>
-            <p className="text-xs text-white/40">
+            <p className="text-sm font-semibold text-white/70">
               Member since{" "}
               {user.createdAt.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
             </p>
           </div>
         </div>
-        <span className="chip border-gold/40 bg-gold/10 text-gold">
-          💰 Current jackpot: ${jackpot.toLocaleString()}
+        <span className="chip border-gold/60 bg-gold/15 text-gold">
+          💰 WIN ${prize.toLocaleString()}
         </span>
       </div>
 
       {/* Account stats */}
       <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
-          { label: "Total games played", value: totalGames },
-          { label: "Games played today", value: used },
+          { label: "Total plays", value: totalGames },
+          { label: "Plays today", value: used },
           { label: "Plays left today", value: Math.max(0, DAILY_PLAY_LIMIT - used) },
-          { label: "Jackpot wins", value: wins.length },
+          { label: "Wins", value: wins.length },
         ].map((s) => (
           <div key={s.label} className="panel p-4 text-center">
-            <div className="font-display text-2xl font-bold text-gold">{s.value}</div>
-            <div className="mt-1 text-[11px] uppercase tracking-wide text-white/45">{s.label}</div>
+            <div className="font-display text-3xl font-extrabold text-gold">{s.value}</div>
+            <div className="mt-1 text-xs font-extrabold uppercase tracking-wide text-white/70">
+              {s.label}
+            </div>
           </div>
         ))}
       </div>
 
       {wins.length > 0 && (
         <div className="panel gold-ring mt-6 p-5">
-          <h2 className="font-display text-lg font-bold text-gold">🏆 Jackpot wins</h2>
-          <ul className="mt-2 space-y-1 text-sm text-white/75">
+          <h2 className="font-display text-2xl font-extrabold text-gold">🏆 Your wins</h2>
+          <ul className="mt-2 space-y-1.5 text-base font-bold text-white/90">
             {wins.map((w) => (
               <li key={w.id}>
                 {GAME_META[w.gameType as GameType].name} —{" "}
                 {w.wonAt.toLocaleDateString("en-US", { dateStyle: "long" })} · $
-                {w.jackpotAmount.toLocaleString()} · payout{" "}
-                <span className="font-semibold">{w.payoutStatus.replace("_", " ")}</span>
+                {w.prizeAmount.toLocaleString()} · payout{" "}
+                <span className="text-win">{w.payoutStatus.replace("_", " ")}</span>
               </li>
             ))}
           </ul>
@@ -93,20 +95,20 @@ export default async function ProfilePage() {
       )}
 
       {/* Per-game stats */}
-      <h2 className="font-display mt-10 text-xl font-bold">Game stats</h2>
+      <h2 className="font-display mt-10 text-2xl font-extrabold">Game stats</h2>
       <div className="mt-4 grid max-w-3xl gap-4 sm:grid-cols-2">
         {stats.map((g) => {
           const meta = GAME_META[g.gameType];
           return (
             <div key={g.gameType} className="panel p-5">
-              <h3 className="font-display font-bold">
+              <h3 className="font-display text-xl font-extrabold">
                 {meta.emoji} {meta.name}
               </h3>
-              <dl className="mt-3 space-y-2 text-sm">
+              <dl className="mt-3 space-y-2.5 text-base">
                 {STAT_ROWS.map((row) => (
                   <div key={row.key} className="flex justify-between">
-                    <dt className="text-white/50">{row.label}</dt>
-                    <dd className={`font-semibold ${row.key === "wins" && g.wins > 0 ? "text-gold" : ""}`}>
+                    <dt className="font-semibold text-white/75">{row.label}</dt>
+                    <dd className={`font-extrabold ${row.key === "wins" && g.wins > 0 ? "text-gold" : ""}`}>
                       {row.key === "totalAttempts" || row.key === "wins"
                         ? g[row.key]
                         : meta.bestLabel(g[row.key])}
@@ -120,9 +122,9 @@ export default async function ProfilePage() {
       </div>
 
       {/* Payout info */}
-      <h2 className="font-display mt-10 text-xl font-bold">Payout info</h2>
-      <p className="mt-1 text-sm text-white/55">
-        Set up how you’d like to be paid if you win — you can change this any time.
+      <h2 className="font-display mt-10 text-2xl font-extrabold">Payout info</h2>
+      <p className="mt-1 text-base font-bold text-white/85">
+        Set up how you’d like your ${prize.toLocaleString()} when you win — change it any time.
       </p>
       <div className="mt-4 max-w-xl">
         <PayoutSection

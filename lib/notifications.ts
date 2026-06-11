@@ -17,7 +17,7 @@ import { db } from "@/lib/db";
 //     text: input.body,
 //   });
 //
-// For jackpot wins specifically, consider also an SMS to the owner.
+// For prize wins specifically, consider also an SMS to the owner.
 
 export interface OwnerNotificationInput {
   type: "jackpot_win" | "suspicious_activity" | "sponsor_inquiry";

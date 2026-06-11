@@ -1,24 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { GAME_META } from "@/lib/games/meta";
 import { DICE_SUMS, DICE_TOTAL_SUMS } from "@/lib/games/types";
 import { useGame } from "@/components/game/useGame";
 import { GameShell } from "@/components/game/GameShell";
 import { LossPanel } from "@/components/game/LossPanel";
-import { Die } from "@/components/game/Die";
+import { Die3D, DieSlot, DIE_ROLL_MS } from "@/components/game/Die";
 import type { SponsorInfo } from "@/components/SponsorBanner";
 
 const meta = GAME_META.dice;
-const ROLL_MS = 950;
 
-interface RollOutcome {
-  d1: number;
-  d2: number;
-  d3: number;
+interface TurnOutcome {
   sum: number;
-  collected: boolean; // false = repeated sum = loss
+  collected: boolean;
   sumsCollected: number;
 }
 
@@ -27,78 +23,120 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export function DiceGame({ sponsor }: { sponsor: SponsorInfo | null }) {
   const game = useGame("dice");
   const { state, phase } = game;
-  const [rolling, setRolling] = useState(false);
-  const [dice, setDice] = useState<[number, number, number]>([3, 5, 2]);
-  const [outcome, setOutcome] = useState<RollOutcome | null>(null);
-  const [tilt] = useState(() => [0, 1, 2].map(() => Math.random() * 14 - 7));
-  const [lastLoss, setLastLoss] = useState<RollOutcome | null>(null);
-  const [preRollCollected, setPreRollCollected] = useState<number[]>([]);
 
-  // While the dice are tumbling the server state is already one roll ahead —
-  // keep showing the pre-roll board until the animation settles.
+  // Three dice slots for the current turn. null = not rolled yet.
+  const [slots, setSlots] = useState<(number | null)[]>([null, null, null]);
+  const [rollKeys, setRollKeys] = useState<[number, number, number]>([0, 0, 0]);
+  const [busy, setBusy] = useState(false);
+  const [outcome, setOutcome] = useState<TurnOutcome | null>(null);
+  const [lastLoss, setLastLoss] = useState<TurnOutcome | null>(null);
+  const [preRollCollected, setPreRollCollected] = useState<number[]>([]);
+  const [seenSession, setSeenSession] = useState<string | null>(null);
+
+  // While dice are tumbling the server is already a roll ahead — keep showing
+  // the pre-roll board until the animation settles (no spoilers).
   const serverCollected = state?.dice?.collected ?? [];
-  const collected = rolling ? preRollCollected : serverCollected;
+  const collected = busy ? preRollCollected : serverCollected;
   const count = collected.length;
 
-  // Tumble: cycle random faces while the roll animation plays.
-  useEffect(() => {
-    if (!rolling) return;
-    const id = setInterval(() => {
-      setDice([
-        1 + Math.floor(Math.random() * 6),
-        1 + Math.floor(Math.random() * 6),
-        1 + Math.floor(Math.random() * 6),
-      ]);
-    }, 90);
-    return () => clearInterval(id);
-  }, [rolling]);
-
-  const roll = async () => {
-    if (rolling || phase !== "playing") return;
-    setPreRollCollected(serverCollected);
-    setRolling(true);
+  // New session (fresh game or resume after refresh, PRD §23.2): reset the
+  // felt and restore any mid-turn dice the server remembers. Render-time
+  // derived state, keyed by sessionId.
+  if (state && state.sessionId !== seenSession) {
+    setSeenSession(state.sessionId);
+    const pending = state.dice?.pending ?? [];
+    setSlots([pending[0] ?? null, pending[1] ?? null, pending[2] ?? null]);
     setOutcome(null);
-    // Server decides the roll instantly; the animation plays for ROLL_MS so
-    // the result lands with the dice.
-    const [res] = await Promise.all([game.act("/api/games/dice/roll", {}), sleep(ROLL_MS)]);
-    if (res) {
-      const r = res.result as unknown as RollOutcome;
-      setDice([r.d1, r.d2, r.d3]);
-      setOutcome(r);
-      if (!r.collected) setLastLoss(r);
+  }
+
+  const rolledCount = slots.filter((v) => v !== null).length;
+  const partialSum = slots.reduce<number>((a, v) => a + (v ?? 0), 0);
+  const turnInProgress = rolledCount > 0 && rolledCount < 3;
+
+  // With one die left, the player can see exactly which totals to dodge.
+  const dangers =
+    turnInProgress && rolledCount === 2
+      ? [1, 2, 3, 4, 5, 6].map((v) => partialSum + v).filter((s) => collected.includes(s))
+      : [];
+
+  const roll = async (mode: "one" | "all") => {
+    if (busy || phase !== "playing") return;
+
+    // Starting a fresh turn? Clear last turn's dice off the felt.
+    let cur = slots;
+    if (!cur.includes(null)) {
+      cur = [null, null, null];
+      setSlots(cur);
+      setOutcome(null);
     }
-    setRolling(false);
+    const empty = cur.map((v, i) => (v === null ? i : -1)).filter((i) => i >= 0);
+    const filling = mode === "one" ? empty.slice(0, 1) : empty;
+
+    setBusy(true);
+    setPreRollCollected(serverCollected);
+    const res = await game.act("/api/games/dice/roll", { mode });
+    if (!res) {
+      setBusy(false);
+      return;
+    }
+    const rolled = res.result.rolled as number[];
+    const next = [...cur];
+    const keys = [...rollKeys] as [number, number, number];
+    filling.forEach((slotIdx, j) => {
+      next[slotIdx] = rolled[j];
+      keys[slotIdx] = keys[slotIdx] + 1;
+    });
+    setSlots(next);
+    setRollKeys(keys);
+
+    // Let the cubes land (staggered) before the verdict hits the board.
+    await sleep(DIE_ROLL_MS + (filling.length - 1) * 140 + 80);
+    if (res.result.turnComplete) {
+      const o: TurnOutcome = {
+        sum: res.result.sum as number,
+        collected: res.result.collected as boolean,
+        sumsCollected: res.result.sumsCollected as number,
+      };
+      setOutcome(o);
+      if (!o.collected) setLastLoss(o);
+    }
+    setBusy(false);
   };
 
-  const glow = !!outcome?.collected && !rolling;
+  const diceLeft = slots.includes(null) ? 3 - rolledCount : 3;
 
   return (
-    <GameShell meta={meta} game={game} holdOverlays={rolling}>
+    <GameShell meta={meta} game={game} holdOverlays={busy}>
       <div className="panel relative overflow-hidden p-5 sm:p-8">
         <div className="relative flex flex-col items-center">
-          {/* Sum board (PRD-style progress: collected vs. remaining sums) */}
+          {/* Totals board: lock in every total from 3 to 18 */}
           <div className="grid w-full max-w-xl grid-cols-8 gap-1.5 sm:gap-2">
             {DICE_SUMS.map((s) => {
               const got = collected.includes(s);
-              const justGot = !rolling && outcome?.collected && outcome.sum === s;
-              const fatal = !rolling && outcome && !outcome.collected && outcome.sum === s;
+              const justGot = !busy && outcome?.collected && outcome.sum === s;
+              const fatal = !busy && outcome && !outcome.collected && outcome.sum === s;
+              const danger = dangers.includes(s) && !busy;
               return (
                 <motion.span
                   key={s}
                   animate={
                     justGot
-                      ? { scale: [1, 1.35, 1] }
+                      ? { scale: [1, 1.4, 1] }
                       : fatal
                       ? { x: [0, -5, 5, -3, 3, 0] }
+                      : danger
+                      ? { scale: [1, 1.08, 1] }
                       : {}
                   }
-                  transition={{ duration: 0.5 }}
-                  className={`grid h-9 place-items-center rounded-lg font-display text-sm font-bold sm:h-11 sm:text-base ${
+                  transition={danger ? { repeat: Infinity, duration: 0.9 } : { duration: 0.5 }}
+                  className={`grid h-10 place-items-center rounded-lg font-display text-base font-extrabold sm:h-12 sm:text-lg ${
                     fatal
-                      ? "border-2 border-red-500 bg-red-500/20 text-red-300"
+                      ? "border-2 border-danger bg-danger/25 text-red-200"
+                      : danger
+                      ? "bg-gold text-black ring-2 ring-danger shadow-[0_0_16px_rgba(255,77,109,0.6)]"
                       : got
-                      ? "bg-gold text-black shadow-[0_0_14px_rgba(246,197,68,0.45)]"
-                      : "border border-white/15 bg-white/[0.04] text-white/40"
+                      ? "bg-gold text-black shadow-[0_0_14px_rgba(255,210,63,0.45)]"
+                      : "border-2 border-white/20 bg-white/[0.05] text-white/70"
                   }`}
                 >
                   {s}
@@ -106,102 +144,134 @@ export function DiceGame({ sponsor }: { sponsor: SponsorInfo | null }) {
               );
             })}
           </div>
-          <p className="mt-2 text-xs text-white/45">
-            {phase === "lost"
-              ? `You collected ${count} / ${DICE_TOTAL_SUMS} sums.`
-              : count === 0
-              ? "Any sum starts your sweep — every later repeat ends it."
-              : `${count} / ${DICE_TOTAL_SUMS} sums collected · ${DICE_TOTAL_SUMS - count} to go — avoid the gold ones!`}
+          <p className="mt-2.5 text-base font-bold text-white/90">
+            {phase === "lost" ? (
+              `You locked in ${count} / ${DICE_TOTAL_SUMS} totals.`
+            ) : turnInProgress ? (
+              dangers.length > 0 ? (
+                <>
+                  Sitting at <span className="text-gold">{partialSum}</span> — dodge{" "}
+                  <span className="text-danger">{dangers.join(", ")}</span>!
+                </>
+              ) : rolledCount === 2 ? (
+                <>
+                  Sitting at <span className="text-gold">{partialSum}</span> — every roll is
+                  safe. Send it! 🚀
+                </>
+              ) : (
+                <>
+                  Sitting at <span className="text-gold">{partialSum}</span> with {3 - rolledCount}{" "}
+                  dice to go.
+                </>
+              )
+            ) : count === 0 ? (
+              "Roll your first total to start the sweep!"
+            ) : (
+              <>
+                <span className="text-gold">{count} / {DICE_TOTAL_SUMS}</span> locked in ·{" "}
+                {DICE_TOTAL_SUMS - count} to go
+              </>
+            )}
           </p>
 
-          {/* Velvet mat with sponsor branding (PRD §7.2) */}
+          {/* The felt: sponsor-branded table (PRD §7.2) */}
           <div
-            className={`relative mt-6 w-full max-w-xl overflow-hidden rounded-[2rem] border-4 transition-shadow duration-500 ${
-              glow ? "border-gold/70 shadow-[0_0_44px_rgba(246,197,68,0.35)]" : "border-[#3a2c12]/80 shadow-2xl"
+            className={`relative mt-5 w-full max-w-xl overflow-hidden rounded-[2rem] border-4 transition-shadow duration-500 ${
+              outcome?.collected && !busy
+                ? "border-win/80 shadow-[0_0_44px_rgba(0,230,92,0.4)]"
+                : "border-[#0a2b20] shadow-2xl"
             }`}
             style={{
               background:
-                "radial-gradient(420px 200px at 50% 30%, rgba(255,255,255,0.08), transparent 70%), radial-gradient(ellipse at center, #3b1227 0%, #25081a 60%, #1a0512 100%)",
+                "radial-gradient(420px 200px at 50% 25%, rgba(255,255,255,0.10), transparent 70%), radial-gradient(ellipse at center, #14543c 0%, #0c3a29 60%, #07271b 100%)",
             }}
           >
-            {/* sponsor watermark on the mat */}
+            {/* sponsor watermark on the felt */}
             <div className="pointer-events-none absolute inset-0 grid place-items-center">
               {sponsor?.logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={sponsor.logoUrl} alt="" className="max-h-20 opacity-15" />
+                <img src={sponsor.logoUrl} alt="" className="max-h-24 opacity-20" />
               ) : (
-                <span className="select-none font-display text-2xl font-extrabold uppercase tracking-[0.3em] text-white/[0.08] sm:text-3xl">
-                  {sponsor?.name ?? "Jackpot Arcade"}
+                <span className="select-none font-display text-2xl font-extrabold uppercase tracking-[0.3em] text-white/15 sm:text-3xl">
+                  {sponsor?.name ?? "1K ARCADE"}
                 </span>
               )}
             </div>
 
-            <div className="relative flex h-56 items-center justify-center gap-4 sm:h-64 sm:gap-7">
-              {[0, 1, 2].map((i) => (
-                <motion.div
-                  key={i}
-                  animate={
-                    rolling
-                      ? {
-                          x: [(i - 1) * -110, (i - 1) * 30, 0],
-                          y: [-70, 25, 0],
-                          rotate: [0, i % 2 ? -420 : 420, (i % 2 ? 360 : -360) + tilt[i]],
-                        }
-                      : { rotate: tilt[i] }
-                  }
-                  transition={
-                    rolling
-                      ? { duration: ROLL_MS / 1000, ease: [0.2, 0.8, 0.3, 1], delay: i * 0.04 }
-                      : { type: "spring", stiffness: 220, damping: 18 }
-                  }
-                >
-                  <Die value={dice[i]} glow={glow} />
-                </motion.div>
-              ))}
+            <div className="relative flex h-52 items-center justify-center gap-6 sm:h-60 sm:gap-10">
+              {slots.map((v, i) =>
+                v === null ? (
+                  <DieSlot key={`slot-${i}`} />
+                ) : (
+                  <Die3D
+                    key={`die-${i}`}
+                    value={v}
+                    rollKey={rollKeys[i]}
+                    delay={i * 0.14}
+                    glow={!!outcome?.collected && !busy}
+                  />
+                )
+              )}
             </div>
 
-            {/* Last roll readout */}
+            {/* Turn verdict */}
             <div className="relative pb-4 text-center">
-              {outcome && !rolling ? (
+              {outcome && !busy ? (
                 <motion.p
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`font-display text-lg font-bold ${
-                    outcome.collected ? "text-gold" : "text-red-300"
+                  initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  className={`font-display text-2xl font-extrabold ${
+                    outcome.collected ? "text-win" : "text-red-300"
                   }`}
                 >
-                  {outcome.d1} + {outcome.d2} + {outcome.d3} = {outcome.sum}{" "}
+                  {slots.join(" + ")} = {outcome.sum}{" "}
                   {outcome.collected
                     ? outcome.sumsCollected >= DICE_TOTAL_SUMS
-                      ? "— full sweep! 🏆"
-                      : "— new sum, collected!"
-                    : `— already collected. Game over.`}
+                      ? "— FULL SWEEP! 🏆"
+                      : "— LOCKED IN! 🔒"
+                    : "— already locked. 💥"}
                 </motion.p>
               ) : (
-                <p className="text-sm text-white/35">{rolling ? "Rolling…" : "Ready when you are."}</p>
+                <p className="text-base font-bold text-white/60">
+                  {busy ? "Dice are flying…" : turnInProgress ? "Keep it going…" : "Your table. Your roll."}
+                </p>
               )}
             </div>
           </div>
 
-          <button
-            onClick={roll}
-            disabled={rolling || phase !== "playing"}
-            className="btn-gold mt-6 w-full max-w-xs !py-4 !text-lg"
-          >
-            {rolling ? "Rolling…" : "🎲 Roll three dice"}
-          </button>
+          {/* Roll your way: all at once, or one at a time (PRD §9) */}
+          <div className="mt-5 grid w-full max-w-xl grid-cols-2 gap-3">
+            <button
+              onClick={() => roll("all")}
+              disabled={busy || phase !== "playing"}
+              className="btn-win !py-4 !text-lg"
+            >
+              ⚡ ROLL {turnInProgress ? `THE REST (${diceLeft})` : "ALL 3"}
+            </button>
+            <button
+              onClick={() => roll("one")}
+              disabled={busy || phase !== "playing"}
+              className="btn-gold !py-4 !text-lg"
+            >
+              🎯 ROLL ONE{turnInProgress ? ` (${rolledCount}/3)` : " AT A TIME"}
+            </button>
+          </div>
+          <p className="mt-2 text-sm font-bold text-white/65">
+            Feeling bold? Send all three. Want the sweat? Roll them one by one.
+          </p>
         </div>
       </div>
 
-      {phase === "lost" && !rolling && (
+      {phase === "lost" && !busy && (
         <LossPanel
           game={game}
+          sponsor={sponsor}
           reason={
             lastLoss
-              ? `Rolled ${lastLoss.sum} again — already collected. Game over.`
-              : "Repeated sum. Game over."
+              ? `Rolled ${lastLoss.sum} — that total was already locked.`
+              : "Repeated total."
           }
-          progressText={`You collected ${count} / ${DICE_TOTAL_SUMS} sums. A perfect win sweeps all ${DICE_TOTAL_SUMS}.`}
+          progressText={`You locked in ${count} of ${DICE_TOTAL_SUMS} totals. Run it back!`}
         />
       )}
     </GameShell>

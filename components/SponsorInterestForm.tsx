@@ -46,7 +46,7 @@ export function SponsorInterestForm() {
       <div className="panel grid place-items-center p-10 text-center animate-pop-in">
         <span className="text-4xl">🤝</span>
         <h3 className="font-display mt-3 text-xl font-bold">Thanks — we’ll be in touch!</h3>
-        <p className="mt-2 max-w-xs text-sm text-white/60">
+        <p className="mt-2 max-w-xs text-sm text-white/85">
           Your inquiry is in. We typically reply within one business day to lock in your
           sponsored day.
         </p>
@@ -60,7 +60,7 @@ export function SponsorInterestForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         {FIELDS.map((f) => (
           <div key={f.name} className={f.name === "companyName" || f.name === "email" ? "sm:col-span-1" : ""}>
-            <label htmlFor={f.name} className="mb-1 block text-xs font-medium text-white/60">
+            <label htmlFor={f.name} className="mb-1 block text-xs font-bold text-white/85">
               {f.label}
             </label>
             <input
@@ -76,7 +76,7 @@ export function SponsorInterestForm() {
         ))}
       </div>
       <div>
-        <label htmlFor="message" className="mb-1 block text-xs font-medium text-white/60">
+        <label htmlFor="message" className="mb-1 block text-xs font-bold text-white/85">
           Anything else? (optional)
         </label>
         <textarea

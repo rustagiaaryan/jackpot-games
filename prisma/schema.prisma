@@ -91,7 +91,7 @@ model Win {
   gameSession   GameSession @relation(fields: [gameSessionId], references: [id], onDelete: Cascade)
   gameType      String
   wonAt         DateTime    @default(now())
-  jackpotAmount Int
+  prizeAmount   Int
   // pending | approved | paid | rejected | needs_review
   payoutStatus  String      @default("pending")
   reviewStatus  String      @default("needs_review")

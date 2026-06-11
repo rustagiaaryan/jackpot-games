@@ -5,7 +5,7 @@ import { GAME_META } from "@/lib/games/meta";
 import type { GameType } from "@/lib/games/types";
 
 // Owner dashboard (PRD §21): win review queue with session replays, sponsor
-// management, sponsor inquiries, jackpot control, and site analytics.
+// management, sponsor inquiries, prize control, and site analytics.
 
 type Tab = "overview" | "winners" | "sponsors" | "inquiries";
 
@@ -24,7 +24,7 @@ interface WinRow {
   id: string;
   gameType: string;
   wonAt: string;
-  jackpotAmount: number;
+  prizeAmount: number;
   payoutStatus: string;
   reviewStatus: string;
   fraudNotes: string | null;
@@ -78,7 +78,7 @@ export function AdminDashboard() {
   const [sponsors, setSponsors] = useState<SponsorRow[]>([]);
   const [inquiries, setInquiries] = useState<InquiryRow[]>([]);
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
-  const [jackpotInput, setJackpotInput] = useState("");
+  const [prizeInput, setPrizeInput] = useState("");
   const [expandedWin, setExpandedWin] = useState<string | null>(null);
   const [sponsorForm, setSponsorForm] = useState({ name: "", websiteUrl: "", logoUrl: "", tagline: "", activeDate: "" });
 
@@ -110,17 +110,17 @@ export function AdminDashboard() {
     loadAll();
   };
 
-  const updateJackpot = async (e: React.FormEvent) => {
+  const updatePrize = async (e: React.FormEvent) => {
     e.preventDefault();
-    const amount = parseInt(jackpotInput, 10);
+    const amount = parseInt(prizeInput, 10);
     if (!Number.isFinite(amount) || amount <= 0) return;
-    await fetch("/api/admin/jackpot", {
+    await fetch("/api/admin/prize", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ amount }),
     });
-    setJackpotInput("");
-    window.location.reload(); // jackpot is rendered server-side everywhere
+    setPrizeInput("");
+    window.location.reload(); // prize is rendered server-side everywhere
   };
 
   const createSponsor = async (e: React.FormEvent) => {
@@ -186,8 +186,8 @@ export function AdminDashboard() {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
-              tab === t ? "bg-gold text-black" : "bg-white/[0.06] text-white/70 hover:bg-white/[0.12]"
+            className={`rounded-xl px-4 py-2 text-sm font-bold transition-colors cursor-pointer ${
+              tab === t ? "bg-gold text-black" : "bg-white/[0.06] text-white/85 hover:bg-white/[0.12]"
             }`}
           >
             {label}
@@ -211,7 +211,7 @@ export function AdminDashboard() {
                 ].map(([label, value]) => (
                   <div key={label as string} className="panel p-4 text-center">
                     <div className="font-display text-xl font-bold text-gold">{value as number}</div>
-                    <div className="mt-1 text-[10px] uppercase tracking-wide text-white/45">{label}</div>
+                    <div className="mt-1 text-xs uppercase tracking-wide text-white/75">{label}</div>
                   </div>
                 ))}
               </div>
@@ -219,18 +219,18 @@ export function AdminDashboard() {
                 <h2 className="font-display mb-3 font-bold">Per-game today</h2>
                 <table className="w-full min-w-[480px] text-sm">
                   <thead>
-                    <tr className="text-left text-[11px] uppercase text-white/40">
-                      <th className="py-1.5 font-medium">Game</th>
-                      <th className="py-1.5 font-medium">Plays today</th>
-                      <th className="py-1.5 font-medium">All-time</th>
-                      <th className="py-1.5 font-medium">Avg progress</th>
-                      <th className="py-1.5 font-medium">Best today</th>
+                    <tr className="text-left text-xs uppercase text-white/70">
+                      <th className="py-1.5 font-bold">Game</th>
+                      <th className="py-1.5 font-bold">Plays today</th>
+                      <th className="py-1.5 font-bold">All-time</th>
+                      <th className="py-1.5 font-bold">Avg progress</th>
+                      <th className="py-1.5 font-bold">Best today</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/[0.05]">
                     {stats.perGame.map((g) => (
                       <tr key={g.gameType}>
-                        <td className="py-2 font-medium">{GAME_META[g.gameType].name}</td>
+                        <td className="py-2 font-bold">{GAME_META[g.gameType].name}</td>
                         <td className="py-2">{g.playsToday}</td>
                         <td className="py-2">{g.totalPlays}</td>
                         <td className="py-2">{g.avgProgress}</td>
@@ -243,38 +243,38 @@ export function AdminDashboard() {
             </>
           )}
 
-          <form onSubmit={updateJackpot} className="panel flex flex-wrap items-end gap-3 p-5">
+          <form onSubmit={updatePrize} className="panel flex flex-wrap items-end gap-3 p-5">
             <div>
-              <label htmlFor="jackpot" className="mb-1 block text-xs font-medium text-white/60">
-                Update jackpot amount ($)
+              <label htmlFor="prize" className="mb-1 block text-xs font-bold text-white/85">
+                Update prize amount ($)
               </label>
               <input
-                id="jackpot"
+                id="prize"
                 type="number"
                 min={1}
                 placeholder="1000"
-                value={jackpotInput}
-                onChange={(e) => setJackpotInput(e.target.value)}
+                value={prizeInput}
+                onChange={(e) => setPrizeInput(e.target.value)}
                 className="input w-40"
               />
             </div>
-            <button type="submit" className="btn-gold">Update jackpot</button>
+            <button type="submit" className="btn-gold">Update prize</button>
           </form>
 
           <div className="panel p-5">
             <h2 className="font-display mb-3 font-bold">Notifications</h2>
-            {notifications.length === 0 && <p className="text-sm text-white/45">Nothing yet.</p>}
+            {notifications.length === 0 && <p className="text-sm text-white/75">Nothing yet.</p>}
             <ul className="space-y-2">
               {notifications.map((n) => (
                 <li
                   key={n.id}
                   className={`rounded-xl border p-3 text-sm ${
-                    n.read ? "border-white/[0.07] text-white/45" : "border-gold/30 bg-gold/[0.05]"
+                    n.read ? "border-white/[0.07] text-white/75" : "border-gold/30 bg-gold/[0.05]"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-semibold">{n.title}</span>
-                    <span className="flex shrink-0 items-center gap-2 text-[11px] text-white/40">
+                    <span className="flex shrink-0 items-center gap-2 text-xs text-white/70">
                       {new Date(n.createdAt).toLocaleString()}
                       {!n.read && (
                         <button onClick={() => markRead(n.id)} className="text-gold underline cursor-pointer">
@@ -283,7 +283,7 @@ export function AdminDashboard() {
                       )}
                     </span>
                   </div>
-                  <pre className="mt-1.5 whitespace-pre-wrap font-sans text-xs text-white/60">{n.body}</pre>
+                  <pre className="mt-1.5 whitespace-pre-wrap font-sans text-xs text-white/85">{n.body}</pre>
                 </li>
               ))}
             </ul>
@@ -294,8 +294,8 @@ export function AdminDashboard() {
       {tab === "winners" && (
         <div className="mt-6 space-y-3">
           {wins.length === 0 && (
-            <p className="panel p-6 text-sm text-white/50">
-              No jackpot winners yet. When someone completes a game, they appear here with the
+            <p className="panel p-6 text-sm text-white/75">
+              No winners yet. When someone completes a game, they appear here with the
               full session replay for review.
             </p>
           )}
@@ -306,13 +306,13 @@ export function AdminDashboard() {
                   <span className="font-display text-lg font-bold">
                     🏆 {w.user.displayName} — {GAME_META[w.gameType as GameType]?.name}
                   </span>
-                  <div className="mt-0.5 text-xs text-white/50">
-                    {new Date(w.wonAt).toLocaleString()} · ${w.jackpotAmount.toLocaleString()} ·
+                  <div className="mt-0.5 text-xs text-white/75">
+                    {new Date(w.wonAt).toLocaleString()} · ${w.prizeAmount.toLocaleString()} ·
                     session {w.gameSessionId.slice(0, 10)}… · phone {w.user.phone}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <label className="text-white/50">Payout:</label>
+                  <label className="text-white/75">Payout:</label>
                   <select
                     value={w.payoutStatus}
                     onChange={(e) => updateWin(w.id, { payoutStatus: e.target.value })}
@@ -324,7 +324,7 @@ export function AdminDashboard() {
                       </option>
                     ))}
                   </select>
-                  <label className="text-white/50">Review:</label>
+                  <label className="text-white/75">Review:</label>
                   <select
                     value={w.reviewStatus}
                     onChange={(e) => updateWin(w.id, { reviewStatus: e.target.value })}
@@ -338,7 +338,7 @@ export function AdminDashboard() {
                   </select>
                 </div>
               </div>
-              <div className="mt-3 grid gap-2 text-xs text-white/65 sm:grid-cols-2">
+              <div className="mt-3 grid gap-2 text-xs text-white/85 sm:grid-cols-2">
                 <div>
                   💸 Payout info:{" "}
                   {w.payoutMethod
@@ -363,7 +363,7 @@ export function AdminDashboard() {
                 {expandedWin === w.id ? "Hide" : "Show"} full game replay
               </button>
               {expandedWin === w.id && (
-                <pre className="nice-scroll mt-2 max-h-72 overflow-auto rounded-xl bg-black/40 p-3 text-[11px] text-emerald-200/80">
+                <pre className="nice-scroll mt-2 max-h-72 overflow-auto rounded-xl bg-black/40 p-3 text-xs text-emerald-200/80">
                   {JSON.stringify(JSON.parse(w.gameSession.history), null, 2)}
                 </pre>
               )}
@@ -386,7 +386,7 @@ export function AdminDashboard() {
               ] as const
             ).map(([key, label, ph]) => (
               <div key={key}>
-                <label className="mb-1 block text-xs font-medium text-white/60">{label}</label>
+                <label className="mb-1 block text-xs font-bold text-white/85">{label}</label>
                 <input
                   value={sponsorForm[key]}
                   required={label.includes("*")}
@@ -404,11 +404,11 @@ export function AdminDashboard() {
           <div className="panel overflow-x-auto p-5">
             <table className="w-full min-w-[560px] text-sm">
               <thead>
-                <tr className="text-left text-[11px] uppercase text-white/40">
-                  <th className="py-1.5 font-medium">Date</th>
-                  <th className="py-1.5 font-medium">Sponsor</th>
-                  <th className="py-1.5 font-medium">Tagline</th>
-                  <th className="py-1.5 font-medium">Clicks</th>
+                <tr className="text-left text-xs uppercase text-white/70">
+                  <th className="py-1.5 font-bold">Date</th>
+                  <th className="py-1.5 font-bold">Sponsor</th>
+                  <th className="py-1.5 font-bold">Tagline</th>
+                  <th className="py-1.5 font-bold">Clicks</th>
                   <th className="py-1.5" />
                 </tr>
               </thead>
@@ -416,12 +416,12 @@ export function AdminDashboard() {
                 {sponsors.map((s) => (
                   <tr key={s.id}>
                     <td className="py-2 font-mono text-xs">{s.activeDate}</td>
-                    <td className="py-2 font-medium">
+                    <td className="py-2 font-bold">
                       <a href={s.websiteUrl} target="_blank" rel="noreferrer" className="hover:text-gold">
                         {s.name} ↗
                       </a>
                     </td>
-                    <td className="py-2 text-white/55">{s.tagline ?? "—"}</td>
+                    <td className="py-2 text-white/80">{s.tagline ?? "—"}</td>
                     <td className="py-2">{s.clickCount}</td>
                     <td className="py-2 text-right">
                       <button onClick={() => deleteSponsor(s.id)} className="btn-danger !px-3 !py-1 !text-xs">
@@ -439,19 +439,19 @@ export function AdminDashboard() {
       {tab === "inquiries" && (
         <div className="mt-6 space-y-3">
           {inquiries.length === 0 && (
-            <p className="panel p-6 text-sm text-white/50">No sponsor inquiries yet.</p>
+            <p className="panel p-6 text-sm text-white/75">No sponsor inquiries yet.</p>
           )}
           {inquiries.map((q) => (
             <div key={q.id} className="panel p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <span className="font-display font-bold">{q.companyName}</span>
-                  <span className="ml-2 text-xs text-white/50">
+                  <span className="ml-2 text-xs text-white/75">
                     {q.contactName} · {q.email} {q.phone ? `· ${q.phone}` : ""}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-white/40">{new Date(q.createdAt).toLocaleString()}</span>
+                  <span className="text-xs text-white/70">{new Date(q.createdAt).toLocaleString()}</span>
                   <select
                     value={q.status}
                     onChange={(e) => setInquiryStatus(q.id, e.target.value)}
@@ -463,7 +463,7 @@ export function AdminDashboard() {
                   </select>
                 </div>
               </div>
-              <div className="mt-2 space-y-0.5 text-xs text-white/60">
+              <div className="mt-2 space-y-0.5 text-xs text-white/85">
                 {q.website && <div>🌐 {q.website}</div>}
                 {q.budget && <div>💵 Budget: {q.budget}</div>}
                 {q.preferredDates && <div>📅 Preferred: {q.preferredDates}</div>}

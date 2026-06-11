@@ -61,18 +61,19 @@ export function HighLowGame({ sponsor }: { sponsor: SponsorInfo | null }) {
   const cardsRevealed = hl?.cardsRevealed ?? 1;
   const lossReason =
     lastOutcome?.outcome === "equal"
-      ? `Equal card (${cardLabel(lastOutcome.card)}). Game over.`
-      : `Wrong guess${lastOutcome ? ` — it was ${cardLabel(lastOutcome.card)}` : ""}. Game over.`;
+      ? `Equal card (${cardLabel(lastOutcome.card)}) — that one ends the run.`
+      : `It was ${lastOutcome ? cardLabel(lastOutcome.card) : "the other way"}.`;
 
   return (
     <GameShell meta={meta} game={game} holdOverlays={!settled}>
       <div className="panel relative overflow-hidden p-5 sm:p-8">
         {/* felt table glow */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(700px_300px_at_50%_20%,rgba(16,84,60,0.35),transparent)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(700px_300px_at_50%_20%,rgba(20,84,60,0.4),transparent)]" />
 
         <div className="relative flex flex-col items-center">
-          <div className="chip mb-5">
-            <span className="font-bold text-gold">{cardsRevealed}</span>/52 cards revealed
+          <div className="chip mb-5 !text-base">
+            <span className="font-display font-extrabold text-gold">{cardsRevealed}</span>
+            <span className="text-white/80">/ 52 cards</span>
           </div>
 
           {/* Table: deck (sponsor card back) + current card + flip overlay */}
@@ -112,7 +113,7 @@ export function HighLowGame({ sponsor }: { sponsor: SponsorInfo | null }) {
               </AnimatePresence>
             </div>
 
-            <div className="text-2xl text-white/25">→</div>
+            <div className="text-3xl font-extrabold text-white/40">→</div>
 
             {/* Current card */}
             <div className="relative">
@@ -126,11 +127,11 @@ export function HighLowGame({ sponsor }: { sponsor: SponsorInfo | null }) {
                   <CardFace card={currentCard} ring={phase === "playing" && settled ? "gold" : null} />
                 </motion.div>
               ) : (
-                <div className="grid h-44 w-32 place-items-center rounded-2xl border border-dashed border-white/20 text-white/30 sm:h-52 sm:w-36">
+                <div className="grid h-44 w-32 place-items-center rounded-2xl border-2 border-dashed border-white/30 text-2xl font-extrabold text-white/40 sm:h-52 sm:w-36">
                   ?
                 </div>
               )}
-              <div className="absolute -bottom-6 left-0 right-0 text-center text-[11px] uppercase tracking-wider text-white/40">
+              <div className="absolute -bottom-7 left-0 right-0 text-center text-xs font-extrabold uppercase tracking-wider text-white/70">
                 Current card
               </div>
             </div>
@@ -141,28 +142,28 @@ export function HighLowGame({ sponsor }: { sponsor: SponsorInfo | null }) {
             <button
               onClick={() => guess("higher")}
               disabled={!settled || phase !== "playing"}
-              className="btn-gold !py-4 !text-lg"
+              className="btn-win !py-4 !text-xl"
             >
-              ▲ Higher
+              ▲ HIGHER
             </button>
             <button
               onClick={() => guess("lower")}
               disabled={!settled || phase !== "playing"}
-              className="btn-ghost !py-4 !text-lg hover:!border-gold/50"
+              className="btn-gold !py-4 !text-xl"
             >
-              ▼ Lower
+              ▼ LOWER
             </button>
           </div>
-          <p className="mt-3 text-[11px] text-white/40">
-            Ace is low (A=1 · K=13). An equal card loses automatically.
+          <p className="mt-3 text-sm font-bold text-white/75">
+            Ace is low (A=1 · K=13). An equal card ends the run.
           </p>
 
           {/* Revealed-cards history tray (PRD §8.6) */}
           {shownRevealed.length > 0 && (
             <div className="mt-6 w-full">
-              <div className="mb-1.5 flex items-center justify-between text-[11px] uppercase tracking-wider text-white/40">
-                <span>Cards so far</span>
-                <span>{shownRevealed.length} shown</span>
+              <div className="mb-1.5 flex items-center justify-between text-xs font-extrabold uppercase tracking-wider text-white/70">
+                <span>Your run so far</span>
+                <span>{shownRevealed.length} cards</span>
               </div>
               <div ref={trayRef} className="nice-scroll flex gap-2 overflow-x-auto pb-2">
                 {shownRevealed.map((c, i) => (
@@ -195,8 +196,9 @@ export function HighLowGame({ sponsor }: { sponsor: SponsorInfo | null }) {
       {phase === "lost" && settled && (
         <LossPanel
           game={game}
+          sponsor={sponsor}
           reason={lossReason}
-          progressText={`You reached ${cardsRevealed} card${cardsRevealed === 1 ? "" : "s"}. A perfect win is 52.`}
+          progressText={`You made it ${cardsRevealed} card${cardsRevealed === 1 ? "" : "s"} deep. Run it back!`}
         />
       )}
     </GameShell>

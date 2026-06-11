@@ -20,7 +20,7 @@ lists the exact swap point in code.
 - **Where:** `lib/notifications.ts` (`notifyOwner`) — currently writes to the
   admin dashboard + console only.
 - Wire **Resend** (or SendGrid/Postmark) to `OWNER_EMAIL`
-  (rustagiaaryan@gmail.com). Jackpot wins should also send an SMS to the owner.
+  (rustagiaaryan@gmail.com). Prize wins should also send an SMS to the owner.
 - Sponsor-inquiry submissions (`app/api/sponsor/interest/route.ts`) ride the
   same pipe — once email works, inquiries land in your inbox automatically.
 

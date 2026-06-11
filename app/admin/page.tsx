@@ -4,7 +4,7 @@ import { AdminDashboard } from "@/components/admin/AdminDashboard";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Admin — Jackpot Arcade" };
+export const metadata = { title: "Admin — 1K Arcade" };
 
 export default async function AdminPage() {
   const user = await getCurrentUser();

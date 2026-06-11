@@ -16,27 +16,26 @@ export function PlaysLeftChip() {
 
   return (
     <div className="relative hidden sm:block">
-      <span className={`chip ${low ? "border-red-400/40 text-red-300" : ""}`}>
-        <span className="hidden lg:inline text-white/50">Plays left today:</span>
-        <span className="font-semibold">
+      <span className={`chip ${low ? "border-red-400/50 text-red-300" : ""}`}>
+        <span className="hidden lg:inline text-white/70">Plays left:</span>
+        <span className="font-extrabold">
           {me.playsRemaining} / {me.dailyLimit}
         </span>
         <button
           aria-label="About the daily limit"
           onClick={() => setOpen((v) => !v)}
-          className="grid h-4 w-4 place-items-center rounded-full border border-white/30 text-[9px] text-white/60 hover:border-gold hover:text-gold cursor-pointer"
+          className="grid h-5 w-5 place-items-center rounded-full border-2 border-white/40 text-[10px] font-extrabold text-white/80 hover:border-win hover:text-win cursor-pointer"
         >
           i
         </button>
       </span>
       {open && (
         <div
-          className="panel absolute right-0 top-9 z-50 w-72 p-4 text-xs leading-relaxed text-white/75 animate-pop-in"
+          className="panel absolute right-0 top-10 z-50 w-72 p-4 text-sm font-semibold leading-relaxed text-white/90 animate-pop-in"
           onMouseLeave={() => setOpen(false)}
         >
-          Each account is limited to {me.dailyLimit} total game attempts per day. This limit
-          helps keep the games fair, prevents botting, and protects the jackpot system. Your
-          limit resets every day.
+          Each account gets {me.dailyLimit} game plays per day. The limit keeps the games fair
+          for everyone and resets every single day — come back tomorrow for a fresh {me.dailyLimit}.
         </div>
       )}
     </div>
