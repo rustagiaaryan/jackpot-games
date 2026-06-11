@@ -18,13 +18,13 @@ const PLACEMENTS = [
   },
   {
     title: "On the dice mat",
-    body: "In Dice Staircase, your brand sits on the velvet mat under every roll.",
+    body: "In Dice Sweep, your brand sits on the velvet mat under every single roll.",
     emoji: "🎲",
   },
   {
-    title: "In the door rooms",
-    body: "In the Doors Challenge, your banner hangs in every room of all 8 levels.",
-    emoji: "🚪",
+    title: "Every retry, every day",
+    body: "These games are nearly impossible — players replay them dozens of times in a session, and your brand is there for all of it.",
+    emoji: "🔁",
   },
 ];
 

@@ -12,27 +12,16 @@ const PREVIEWS: Record<string, React.ReactNode> = {
     </div>
   ),
   dice: (
-    <div className="flex items-center justify-center gap-3 pt-4">
+    <div className="flex items-center justify-center gap-2.5 pt-4">
       <div className="grid h-14 w-14 rotate-6 place-items-center rounded-xl bg-white text-2xl font-black text-slate-900 shadow-xl">
         ⚄
       </div>
-      <div className="grid h-14 w-14 -rotate-6 place-items-center rounded-xl bg-white text-2xl font-black text-slate-900 shadow-xl">
+      <div className="grid h-14 w-14 -rotate-3 place-items-center rounded-xl bg-white text-2xl font-black text-slate-900 shadow-xl">
         ⚂
       </div>
-    </div>
-  ),
-  doors: (
-    <div className="flex items-end justify-center gap-2 pt-3">
-      {[0, 1, 2].map((i) => (
-        <div
-          key={i}
-          className={`rounded-t-lg border border-amber-900/60 bg-gradient-to-b from-amber-700 to-amber-950 shadow-lg ${
-            i === 1 ? "h-20 w-12" : "h-16 w-10 opacity-70"
-          }`}
-        >
-          <div className="ml-1.5 mt-7 h-1.5 w-1.5 rounded-full bg-gold/90" />
-        </div>
-      ))}
+      <div className="grid h-14 w-14 rotate-12 place-items-center rounded-xl bg-white text-2xl font-black text-slate-900 shadow-xl">
+        ⚅
+      </div>
     </div>
   ),
 };

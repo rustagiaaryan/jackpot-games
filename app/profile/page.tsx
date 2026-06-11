@@ -94,7 +94,7 @@ export default async function ProfilePage() {
 
       {/* Per-game stats */}
       <h2 className="font-display mt-10 text-xl font-bold">Game stats</h2>
-      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+      <div className="mt-4 grid max-w-3xl gap-4 sm:grid-cols-2">
         {stats.map((g) => {
           const meta = GAME_META[g.gameType];
           return (

@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 const sora = Sora({ variable: "--font-sora", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Jackpot Arcade — Three games. One $1,000 jackpot.",
+  title: "Jackpot Arcade — Two games. One $1,000 jackpot.",
   description:
-    "Free-to-play jackpot mini-games. Complete High Low, Dice Staircase, or the Doors Challenge to win the $1,000 jackpot.",
+    "Free-to-play jackpot mini-games. Complete High Low or Dice Sweep to win the $1,000 jackpot.",
 };
 
 export const viewport: Viewport = {

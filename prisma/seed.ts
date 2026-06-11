@@ -82,14 +82,11 @@ async function main() {
       { user: 1, gameType: "highlow", progress: 14 },
       { user: 2, gameType: "highlow", progress: 11 },
       { user: 3, gameType: "highlow", progress: 7 },
-      { user: 2, gameType: "dice", progress: 4 },
-      { user: 3, gameType: "dice", progress: 3 },
-      { user: 4, gameType: "dice", progress: 2 },
-      { user: 5, gameType: "dice", progress: 2 },
-      { user: 4, gameType: "doors", progress: 5 },
-      { user: 5, gameType: "doors", progress: 4 },
-      { user: 1, gameType: "doors", progress: 3 },
-      { user: 0, gameType: "doors", progress: 2 },
+      { user: 2, gameType: "dice", progress: 11 },
+      { user: 3, gameType: "dice", progress: 9 },
+      { user: 4, gameType: "dice", progress: 8 },
+      { user: 5, gameType: "dice", progress: 6 },
+      { user: 1, gameType: "dice", progress: 4 },
     ];
     for (const s of sessions) {
       await db.gameSession.create({
@@ -97,7 +94,13 @@ async function main() {
           userId: users[s.user].id,
           gameType: s.gameType,
           status: "lost",
-          secretState: "{}",
+          // plausible shape per game so any state reader stays happy
+          secretState:
+            s.gameType === "dice"
+              ? JSON.stringify({
+                  collected: Array.from({ length: s.progress }, (_, i) => 3 + i),
+                })
+              : "{}",
           progress: s.progress,
           history: JSON.stringify([{ t: "seed", at: Date.now() }]),
           dayKey: today,

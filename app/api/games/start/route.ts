@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { apiError, withErrors } from "@/lib/api";
 import { startGame } from "@/lib/games/engine";
 
-const Body = z.object({ gameType: z.enum(["highlow", "dice", "doors"]) });
+const Body = z.object({ gameType: z.enum(["highlow", "dice"]) });
 
 export const POST = withErrors(async (req: NextRequest) => {
   const user = await requireUser();

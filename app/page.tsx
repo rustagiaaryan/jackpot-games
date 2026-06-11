@@ -24,7 +24,7 @@ export default async function HomePage() {
           ✨ Free to play · Real jackpot
         </p>
         <h1 className="font-display mx-auto mt-6 max-w-3xl text-4xl font-extrabold leading-tight tracking-tight sm:text-6xl">
-          Three games. <span className="text-gold-shimmer">One jackpot.</span>
+          Two games. <span className="text-gold-shimmer">One jackpot.</span>
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-base text-white/65 sm:text-lg">
           Complete any challenge and win{" "}
@@ -77,7 +77,7 @@ export default async function HomePage() {
         <p className="mt-2 text-center text-sm text-white/55">
           Browse freely — create a free account with your phone number to play.
         </p>
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mx-auto mt-8 grid max-w-3xl gap-5 sm:grid-cols-2">
           {GAME_LIST.map((meta, i) => (
             <GameCard
               key={meta.type}

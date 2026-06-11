@@ -1,15 +1,15 @@
 // Shared game types.
 //
-// SECURITY MODEL: every game attempt is a GameSession row. The hidden outcomes
-// (shuffled deck order, correct door indexes) live ONLY in the row's
-// `secretState` column. API responses are built exclusively from the Public*
-// types below, which contain nothing about future outcomes. Dice rolls are
-// generated server-side at the moment of the roll, so they never exist ahead
-// of time at all.
+// SECURITY MODEL: every game attempt is a GameSession row. Server-authoritative
+// game state (shuffled deck order, collected dice sums) lives ONLY in the
+// row's `secretState` column. API responses are built exclusively from the
+// Public* types below, which contain nothing about future outcomes. Dice
+// rolls are generated server-side at the moment of the roll, so they never
+// exist ahead of time at all.
 
-export type GameType = "highlow" | "dice" | "doors";
+export type GameType = "highlow" | "dice";
 
-export const GAME_TYPES: readonly GameType[] = ["highlow", "dice", "doors"] as const;
+export const GAME_TYPES: readonly GameType[] = ["highlow", "dice"] as const;
 
 export function isGameType(v: string): v is GameType {
   return (GAME_TYPES as readonly string[]).includes(v);
@@ -34,36 +34,31 @@ export interface PublicHighLowState {
   totalCards: 52;
 }
 
-// ── Dice Staircase ──────────────────────────────────────────────────────────
+// ── Dice Sweep ──────────────────────────────────────────────────────────────
+// Three dice. Collect every sum from 3 to 18 in ANY order; rolling a sum you
+// already collected ends the game. All 16 sums = win.
 
-export const DICE_TARGETS = [8, 7, 6, 5, 4, 3, 2] as const;
+export const DICE_MIN_SUM = 3;
+export const DICE_MAX_SUM = 18;
+export const DICE_TOTAL_SUMS = DICE_MAX_SUM - DICE_MIN_SUM + 1; // 16
+
+/** All sums in display order: 3, 4, … 18. */
+export const DICE_SUMS: readonly number[] = Array.from(
+  { length: DICE_TOTAL_SUMS },
+  (_, i) => DICE_MIN_SUM + i
+);
 
 export interface DiceSecret {
-  // Intentionally empty: each roll is generated at roll time, never ahead.
-  _: null;
+  /** Sums collected so far. Server-authoritative; each roll is generated at
+   *  roll time, never ahead. */
+  collected: number[];
 }
 
 export interface PublicDiceState {
-  targets: readonly number[];
-  stepsCompleted: number; // == progress; 7 = win
-  lastRoll: { d1: number; d2: number; sum: number } | null;
-}
-
-// ── Doors Challenge ─────────────────────────────────────────────────────────
-
-export const DOOR_COUNTS = [1, 2, 4, 8, 16, 32, 64, 2] as const;
-export const TOTAL_LEVELS = DOOR_COUNTS.length; // 8
-
-export interface DoorsSecret {
-  /** answers[i] = correct door for level i+1. Generated lazily per level entry. */
-  answers: number[];
-}
-
-export interface PublicDoorsState {
-  level: number; // current level, 1-based
-  doorCount: number;
-  levelsCleared: number; // == progress; 8 = win
-  doorCounts: readonly number[];
+  collected: number[]; // sums already rolled (the player's own history)
+  sumsCollected: number; // == progress; 16 = win
+  totalSums: number;
+  lastRoll: { d1: number; d2: number; d3: number; sum: number } | null;
 }
 
 // ── Shared envelope ─────────────────────────────────────────────────────────
@@ -80,7 +75,6 @@ export interface PublicSessionState {
   jackpot: number;
   highlow?: PublicHighLowState;
   dice?: PublicDiceState;
-  doors?: PublicDoorsState;
 }
 
 /** One entry in the per-session action log (used for replay + fraud review). */

@@ -34,12 +34,9 @@ export default async function TermsPage() {
             Revealing all 52 cards wins.
           </li>
           <li>
-            <b>Dice Staircase:</b> roll two dice and hit the sums 8, 7, 6, 5, 4, 3, 2 in exact
-            order. Any other sum ends the game. Completing the full sequence wins.
-          </li>
-          <li>
-            <b>Doors Challenge:</b> pick the one correct door per room across 8 levels with 1,
-            2, 4, 8, 16, 32, 64, then 2 doors. A wrong door ends the game. Clearing Level 8 wins.
+            <b>Dice Sweep:</b> roll three dice and collect every sum from 3 to 18, in any
+            order. Rolling a sum that has already been collected ends the game. Collecting all
+            16 sums wins.
           </li>
         </ul>
       ),

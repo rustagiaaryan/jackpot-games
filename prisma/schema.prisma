@@ -60,13 +60,13 @@ model OtpCode {
   @@index([phone])
 }
 
-// One row per game attempt. `secretState` holds the hidden outcomes
-// (shuffled deck / correct doors) and MUST NEVER be sent to the client.
+// One row per game attempt. `secretState` holds the server-authoritative
+// state (shuffled deck / collected sums) and MUST NEVER be sent to the client.
 model GameSession {
   id              String    @id @default(cuid())
   userId          String
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  gameType        String // "highlow" | "dice" | "doors"
+  gameType        String // "highlow" | "dice"
   status          String    @default("active") // active | lost | won | abandoned
   secretState     String // JSON — server-only hidden state
   progress        Int       @default(0) // cards revealed / steps done / levels cleared

@@ -29,7 +29,7 @@ export default async function LeaderboardsPage() {
         </span>
       </div>
 
-      <div className="mt-8 grid gap-5 lg:grid-cols-3">
+      <div className="mt-8 grid gap-5 lg:grid-cols-2">
         {GAME_LIST.map((meta, i) => {
           const board = boards[i];
           return (

@@ -1,14 +1,14 @@
 # 🎰 Jackpot Arcade
 
-Free-to-play jackpot mini-games. Players verify a phone number, then try three
-"nearly impossible" challenges — complete any one and win the **$1,000 jackpot**
-(configurable). Built from [PRD.md](./PRD.md).
+Free-to-play jackpot mini-games. Players verify a phone number, then try two
+"nearly impossible" challenges — complete either one and win the **$1,000 jackpot**
+(configurable). Built from [PRD.md](./PRD.md) (Doors game since removed; dice
+game redesigned to Dice Sweep).
 
 | Game | Win condition | Odds-ish |
 | --- | --- | --- |
 | 🃏 **High Low** | Call higher/lower through all 52 cards (Ace low, equal loses) | astronomically rare |
-| 🎲 **Dice Staircase** | Roll sums **8 → 7 → 6 → 5 → 4 → 3 → 2** in exact order | ~1 in 1.5 million |
-| 🚪 **Doors Challenge** | Pick the safe door across 8 rooms (1, 2, 4, 8, 16, 32, 64, 2 doors) | 1 in 2,097,152 |
+| 🎲 **Dice Sweep** | Roll 3 dice and collect **every sum 3–18 in any order** — repeating a collected sum loses | ~1 in 733 million |
 
 ## Stack
 
@@ -54,10 +54,11 @@ See [.env.example](./.env.example) for full docs. Highlights:
 ## How the security model works
 
 - **Hidden outcomes never reach the client.** Each attempt is a `GameSession`
-  row whose `secretState` column holds the shuffled deck / correct doors.
-  API responses are built only from `Public*` types ([lib/games/types.ts](lib/games/types.ts)).
-  Dice rolls are generated server-side *at roll time*, so future rolls never
-  exist anywhere. All randomness is `crypto.randomInt` (CSPRNG), never `Math.random`.
+  row whose `secretState` column holds the server-authoritative state (the
+  shuffled deck / collected sums). API responses are built only from `Public*`
+  types ([lib/games/types.ts](lib/games/types.ts)). Dice rolls are generated
+  server-side *at roll time*, so future rolls never exist anywhere. All
+  randomness is `crypto.randomInt` (CSPRNG), never `Math.random`.
 - **Sessions can't be replayed or forged.** Finished sessions reject further
   actions; starting a new game abandons any active one (multi-tab/refresh safe);
   every action is appended to a timestamped history used for win review.
@@ -78,10 +79,10 @@ See [.env.example](./.env.example) for full docs. Highlights:
 app/                  pages (home, games, game pages, leaderboards, profile,
                       login, terms, privacy, sponsor, admin) + API routes
 components/           UI: nav/sponsor banner/footer, login flow, game shell,
-                      the three games, payout forms, admin dashboard
+                      the two games, payout forms, admin dashboard
 lib/                  auth, sms, phone, rate limiting, anti-bot, notifications,
                       settings, leaderboards, stats
-lib/games/            engines: highlow / dice / doors + session orchestration
+lib/games/            engines: highlow / dice + session orchestration
 prisma/               schema + seed
 ```
 

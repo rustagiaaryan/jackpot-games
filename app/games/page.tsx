@@ -23,7 +23,7 @@ export default async function GamesPage() {
         the <span className="font-semibold text-gold">${jackpot.toLocaleString()} jackpot</span>{" "}
         is yours.
       </p>
-      <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-8 grid max-w-3xl gap-5 sm:grid-cols-2">
         {GAME_LIST.map((meta, i) => (
           <GameCard
             key={meta.type}

@@ -1,6 +1,6 @@
 import type { GameType } from "@/lib/games/types";
 
-// Client-safe display metadata for the three games (no server imports).
+// Client-safe display metadata for the games (no server imports).
 
 export interface GameMeta {
   type: GameType;
@@ -35,37 +35,22 @@ export const GAME_META: Record<GameType, GameMeta> = {
   },
   dice: {
     type: "dice",
-    slug: "dice-staircase",
-    name: "Dice Staircase",
+    slug: "dice-sweep",
+    name: "Dice Sweep",
     emoji: "🎲",
-    tagline: "Roll 8 → 7 → 6 → 5 → 4 → 3 → 2. In order.",
+    tagline: "Three dice. Sweep every sum from 3 to 18. Never repeat.",
     difficulty: "Brutally unlikely",
     description:
-      "Roll two dice and hit the exact sums 8, 7, 6, 5, 4, 3, 2 — in order. One wrong sum and the staircase collapses.",
+      "Roll three dice and collect every sum from 3 to 18 — in any order. The moment you repeat a sum you've already collected, it's over.",
     instructions:
-      "Roll two dice and hit the sums in order: 8, 7, 6, 5, 4, 3, 2. If you roll the wrong sum, the game ends. Complete the full staircase to win the jackpot.",
-    bestLabel: (n) => `${n} / 7 steps`,
-    winnerLabel: "WINNER — completed 8 → 2 staircase",
-    maxProgress: 7,
-  },
-  doors: {
-    type: "doors",
-    slug: "doors",
-    name: "Doors Challenge",
-    emoji: "🚪",
-    tagline: "Eight rooms. One safe path. Don’t fall.",
-    difficulty: "Astronomically rare",
-    description:
-      "Each room hides one correct door among 1, 2, 4, 8, 16, 32, 64… then a final 2. Pick wrong and you fall into the abyss.",
-    instructions:
-      "Pick the correct door to move to the next room. The number of doors increases each level until Level 7, then the final level has 2 doors. Choose wrong and you fall into the abyss. Complete all 8 levels to win the jackpot.",
-    bestLabel: (n) => (n === 0 ? "Level 1" : `Cleared Level ${n}`),
-    winnerLabel: "WINNER — cleared Level 8",
-    maxProgress: 8,
+      "Roll three dice and collect every sum from 3 to 18, in any order. Each new sum lights up on the board. If you roll a sum you've already collected, the game ends. Sweep all 16 sums to win the jackpot.",
+    bestLabel: (n) => `${n} / 16 sums`,
+    winnerLabel: "WINNER — swept all 16 sums",
+    maxProgress: 16,
   },
 };
 
-export const GAME_LIST: GameMeta[] = [GAME_META.highlow, GAME_META.dice, GAME_META.doors];
+export const GAME_LIST: GameMeta[] = [GAME_META.highlow, GAME_META.dice];
 
 export function metaBySlug(slug: string): GameMeta | undefined {
   return GAME_LIST.find((g) => g.slug === slug);

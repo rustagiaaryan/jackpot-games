@@ -12,11 +12,10 @@ import {
   type HistoryEntry,
   type PublicSessionState,
   type HighLowSecret,
-  type DoorsSecret,
+  type DiceSecret,
 } from "@/lib/games/types";
 import { startHighLow, applyHighLowGuess, highLowPublicState } from "@/lib/games/highlow";
 import { startDice, applyDiceRoll, dicePublicState } from "@/lib/games/dice";
-import { startDoors, applyDoorsPick, doorsPublicState } from "@/lib/games/doors";
 import type { User, GameSession } from "@prisma/client";
 
 // Session orchestration shared by all game API routes.
@@ -66,15 +65,21 @@ function toPublic(session: GameSession, ctx: Ctx): PublicSessionState {
     const secret = JSON.parse(session.secretState) as HighLowSecret;
     base.highlow = highLowPublicState(secret, session.progress, lost);
   } else if (session.gameType === "dice") {
+    const secret = JSON.parse(session.secretState) as DiceSecret;
     const history = JSON.parse(session.history) as HistoryEntry[];
     const rolls = history.filter((h) => h.t === "roll");
     const last = rolls[rolls.length - 1];
     base.dice = dicePublicState(
-      session.progress,
-      last ? { d1: last.d1 as number, d2: last.d2 as number, sum: last.sum as number } : null
+      secret,
+      last
+        ? {
+            d1: last.d1 as number,
+            d2: last.d2 as number,
+            d3: last.d3 as number,
+            sum: last.sum as number,
+          }
+        : null
     );
-  } else if (session.gameType === "doors") {
-    base.doors = doorsPublicState(session.progress);
   }
   return base;
 }
@@ -127,8 +132,7 @@ export async function startGame(user: User, gameTypeRaw: string): Promise<Public
     data: { status: "abandoned", endedAt: new Date() },
   });
 
-  const started =
-    gameType === "highlow" ? startHighLow() : gameType === "dice" ? startDice() : startDoors();
+  const started = gameType === "highlow" ? startHighLow() : startDice();
 
   const history: HistoryEntry[] = [{ t: "start", at: Date.now() }];
   const session = await db.gameSession.create({
@@ -244,37 +248,20 @@ export async function highLowGuess(
 
 export async function diceRoll(user: User, sessionId: string): Promise<ActionOutcome> {
   const session = await loadActiveSession(user, sessionId, "dice");
-  const r = applyDiceRoll(session.progress);
+  const secret = JSON.parse(session.secretState) as DiceSecret;
+  const r = applyDiceRoll(secret);
   return finalizeAction(
     user,
     session,
-    { t: "roll", at: Date.now(), d1: r.d1, d2: r.d2, sum: r.sum, target: r.target, correct: r.correct },
-    { progress: r.newProgress, won: r.won, lost: r.lost },
-    { d1: r.d1, d2: r.d2, sum: r.sum, target: r.target, correct: r.correct, won: r.won, lost: r.lost }
-  );
-}
-
-export async function doorsPick(user: User, sessionId: string, doorIndex: number): Promise<ActionOutcome> {
-  const session = await loadActiveSession(user, sessionId, "doors");
-  const secret = JSON.parse(session.secretState) as DoorsSecret;
-  let r;
-  try {
-    r = applyDoorsPick(secret, session.progress, doorIndex);
-  } catch {
-    throw new GameError("Invalid door.", "bad_request");
-  }
-  return finalizeAction(
-    user,
-    session,
-    { t: "pick", at: Date.now(), level: r.clearedLevel, doorIndex, correct: r.correct },
+    { t: "roll", at: Date.now(), d1: r.d1, d2: r.d2, d3: r.d3, sum: r.sum, collected: r.collected },
     { progress: r.newProgress, won: r.won, lost: r.lost, secret },
     {
-      correct: r.correct,
-      // The correct door is only revealed once the level is decided — on a
-      // loss it powers the "it was that one!" reveal; on a win it's the door
-      // the player just opened anyway.
-      correctDoor: r.correctDoor,
-      clearedLevel: r.clearedLevel,
+      d1: r.d1,
+      d2: r.d2,
+      d3: r.d3,
+      sum: r.sum,
+      collected: r.collected,
+      sumsCollected: r.newProgress,
       won: r.won,
       lost: r.lost,
     }
@@ -285,8 +272,7 @@ export async function doorsPick(user: User, sessionId: string, doorIndex: number
 
 const GAME_NAMES: Record<GameType, string> = {
   highlow: "High Low",
-  dice: "Dice Staircase",
-  doors: "Doors Challenge",
+  dice: "Dice Sweep",
 };
 
 async function recordWin(user: User, session: GameSession): Promise<void> {

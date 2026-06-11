@@ -1,39 +1,52 @@
 import { secureInt } from "@/lib/random";
-import { DICE_TARGETS, type DiceSecret, type PublicDiceState } from "@/lib/games/types";
+import {
+  DICE_TOTAL_SUMS,
+  type DiceSecret,
+  type PublicDiceState,
+} from "@/lib/games/types";
 
-// Dice Staircase engine. Roll sums 8 → 7 → 6 → 5 → 4 → 3 → 2 in exact order.
-// Any wrong sum ends the game. Dice values are generated server-side AT ROLL
-// TIME with a CSPRNG — future rolls never exist anywhere before the roll.
+// Dice Sweep engine. Roll three dice and collect every sum from 3 to 18 in
+// any order — repeating a sum you already collected ends the game. Dice
+// values are generated server-side AT ROLL TIME with a CSPRNG — future rolls
+// never exist anywhere before the roll.
 
 export function startDice(): { secret: DiceSecret; progress: number } {
-  return { secret: { _: null }, progress: 0 };
+  return { secret: { collected: [] }, progress: 0 };
 }
 
 export interface DiceRollResult {
   d1: number;
   d2: number;
+  d3: number;
   sum: number;
-  target: number;
-  correct: boolean;
+  /** true if this sum was new (collected), false if it was a repeat (loss) */
+  collected: boolean;
   newProgress: number;
   won: boolean;
   lost: boolean;
 }
 
-export function applyDiceRoll(progress: number): DiceRollResult {
+/** Mutates `secret.collected` when the sum is new. */
+export function applyDiceRoll(secret: DiceSecret): DiceRollResult {
   const d1 = secureInt(6) + 1;
   const d2 = secureInt(6) + 1;
-  const sum = d1 + d2;
-  const target = DICE_TARGETS[progress];
-  const correct = sum === target;
-  const newProgress = correct ? progress + 1 : progress;
-  const won = correct && newProgress === DICE_TARGETS.length;
-  return { d1, d2, sum, target, correct, newProgress, won, lost: !correct };
+  const d3 = secureInt(6) + 1;
+  const sum = d1 + d2 + d3;
+  const repeat = secret.collected.includes(sum);
+  if (!repeat) secret.collected.push(sum);
+  const newProgress = secret.collected.length;
+  const won = !repeat && newProgress === DICE_TOTAL_SUMS;
+  return { d1, d2, d3, sum, collected: !repeat, newProgress, won, lost: repeat };
 }
 
 export function dicePublicState(
-  progress: number,
-  lastRoll: { d1: number; d2: number; sum: number } | null
+  secret: DiceSecret,
+  lastRoll: { d1: number; d2: number; d3: number; sum: number } | null
 ): PublicDiceState {
-  return { targets: DICE_TARGETS, stepsCompleted: progress, lastRoll };
+  return {
+    collected: [...secret.collected],
+    sumsCollected: secret.collected.length,
+    totalSums: DICE_TOTAL_SUMS,
+    lastRoll,
+  };
 }

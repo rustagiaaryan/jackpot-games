@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { GAME_META } from "@/lib/games/meta";
-import { DICE_TARGETS } from "@/lib/games/types";
+import { DICE_SUMS, DICE_TOTAL_SUMS } from "@/lib/games/types";
 import { useGame } from "@/components/game/useGame";
 import { GameShell } from "@/components/game/GameShell";
 import { LossPanel } from "@/components/game/LossPanel";
@@ -16,9 +16,10 @@ const ROLL_MS = 950;
 interface RollOutcome {
   d1: number;
   d2: number;
+  d3: number;
   sum: number;
-  target: number;
-  correct: boolean;
+  collected: boolean; // false = repeated sum = loss
+  sumsCollected: number;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -27,29 +28,34 @@ export function DiceGame({ sponsor }: { sponsor: SponsorInfo | null }) {
   const game = useGame("dice");
   const { state, phase } = game;
   const [rolling, setRolling] = useState(false);
-  const [dice, setDice] = useState<[number, number]>([4, 4]);
+  const [dice, setDice] = useState<[number, number, number]>([3, 5, 2]);
   const [outcome, setOutcome] = useState<RollOutcome | null>(null);
-  const [tilt] = useState(() => [Math.random() * 14 - 7, Math.random() * 14 - 7]);
+  const [tilt] = useState(() => [0, 1, 2].map(() => Math.random() * 14 - 7));
   const [lastLoss, setLastLoss] = useState<RollOutcome | null>(null);
-  const [preRollSteps, setPreRollSteps] = useState(0);
+  const [preRollCollected, setPreRollCollected] = useState<number[]>([]);
 
-  // While the dice are tumbling the server state is already one step ahead —
-  // keep showing the pre-roll staircase until the animation settles.
-  const serverSteps = state?.dice?.stepsCompleted ?? 0;
-  const steps = rolling ? preRollSteps : serverSteps;
+  // While the dice are tumbling the server state is already one roll ahead —
+  // keep showing the pre-roll board until the animation settles.
+  const serverCollected = state?.dice?.collected ?? [];
+  const collected = rolling ? preRollCollected : serverCollected;
+  const count = collected.length;
 
   // Tumble: cycle random faces while the roll animation plays.
   useEffect(() => {
     if (!rolling) return;
     const id = setInterval(() => {
-      setDice([1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)]);
+      setDice([
+        1 + Math.floor(Math.random() * 6),
+        1 + Math.floor(Math.random() * 6),
+        1 + Math.floor(Math.random() * 6),
+      ]);
     }, 90);
     return () => clearInterval(id);
   }, [rolling]);
 
   const roll = async () => {
     if (rolling || phase !== "playing") return;
-    setPreRollSteps(serverSteps);
+    setPreRollCollected(serverCollected);
     setRolling(true);
     setOutcome(null);
     // Server decides the roll instantly; the animation plays for ROLL_MS so
@@ -57,52 +63,58 @@ export function DiceGame({ sponsor }: { sponsor: SponsorInfo | null }) {
     const [res] = await Promise.all([game.act("/api/games/dice/roll", {}), sleep(ROLL_MS)]);
     if (res) {
       const r = res.result as unknown as RollOutcome;
-      setDice([r.d1, r.d2]);
+      setDice([r.d1, r.d2, r.d3]);
       setOutcome(r);
-      if (!r.correct) setLastLoss(r);
+      if (!r.collected) setLastLoss(r);
     }
     setRolling(false);
   };
 
-  const glow = !!outcome?.correct && !rolling;
+  const glow = !!outcome?.collected && !rolling;
 
   return (
     <GameShell meta={meta} game={game} holdOverlays={rolling}>
       <div className="panel relative overflow-hidden p-5 sm:p-8">
         <div className="relative flex flex-col items-center">
-          {/* Staircase progress (PRD §9.3: target, completed, remaining) */}
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {DICE_TARGETS.map((t, i) => {
-              const done = i < steps;
-              const current = i === steps && phase !== "lost";
+          {/* Sum board (PRD-style progress: collected vs. remaining sums) */}
+          <div className="grid w-full max-w-xl grid-cols-8 gap-1.5 sm:gap-2">
+            {DICE_SUMS.map((s) => {
+              const got = collected.includes(s);
+              const justGot = !rolling && outcome?.collected && outcome.sum === s;
+              const fatal = !rolling && outcome && !outcome.collected && outcome.sum === s;
               return (
-                <div key={t} className="flex items-center gap-2">
-                  <motion.span
-                    animate={done && glow && i === steps - 1 ? { scale: [1, 1.3, 1] } : {}}
-                    className={`grid h-10 w-10 place-items-center rounded-xl font-display text-lg font-bold transition-all sm:h-12 sm:w-12 ${
-                      done
-                        ? "bg-gold text-black shadow-[0_0_18px_rgba(246,197,68,0.5)]"
-                        : current
-                        ? "border-2 border-gold bg-gold/10 text-gold animate-glow-pulse"
-                        : "border border-white/15 bg-white/[0.04] text-white/40"
-                    }`}
-                  >
-                    {t}
-                  </motion.span>
-                  {i < DICE_TARGETS.length - 1 && <span className="text-white/25">→</span>}
-                </div>
+                <motion.span
+                  key={s}
+                  animate={
+                    justGot
+                      ? { scale: [1, 1.35, 1] }
+                      : fatal
+                      ? { x: [0, -5, 5, -3, 3, 0] }
+                      : {}
+                  }
+                  transition={{ duration: 0.5 }}
+                  className={`grid h-9 place-items-center rounded-lg font-display text-sm font-bold sm:h-11 sm:text-base ${
+                    fatal
+                      ? "border-2 border-red-500 bg-red-500/20 text-red-300"
+                      : got
+                      ? "bg-gold text-black shadow-[0_0_14px_rgba(246,197,68,0.45)]"
+                      : "border border-white/15 bg-white/[0.04] text-white/40"
+                  }`}
+                >
+                  {s}
+                </motion.span>
               );
             })}
           </div>
           <p className="mt-2 text-xs text-white/45">
             {phase === "lost"
-              ? `You completed ${steps} / 7 steps.`
-              : steps === 0
-              ? "First target: roll a sum of 8."
-              : `Next target: roll a sum of ${DICE_TARGETS[steps] ?? "—"} · ${steps} / 7 done`}
+              ? `You collected ${count} / ${DICE_TOTAL_SUMS} sums.`
+              : count === 0
+              ? "Any sum starts your sweep — every later repeat ends it."
+              : `${count} / ${DICE_TOTAL_SUMS} sums collected · ${DICE_TOTAL_SUMS - count} to go — avoid the gold ones!`}
           </p>
 
-          {/* Velvet mat with sponsor branding (PRD §7.2, §9.3) */}
+          {/* Velvet mat with sponsor branding (PRD §7.2) */}
           <div
             className={`relative mt-6 w-full max-w-xl overflow-hidden rounded-[2rem] border-4 transition-shadow duration-500 ${
               glow ? "border-gold/70 shadow-[0_0_44px_rgba(246,197,68,0.35)]" : "border-[#3a2c12]/80 shadow-2xl"
@@ -124,22 +136,22 @@ export function DiceGame({ sponsor }: { sponsor: SponsorInfo | null }) {
               )}
             </div>
 
-            <div className="relative flex h-56 items-center justify-center gap-8 sm:h-64">
-              {[0, 1].map((i) => (
+            <div className="relative flex h-56 items-center justify-center gap-4 sm:h-64 sm:gap-7">
+              {[0, 1, 2].map((i) => (
                 <motion.div
                   key={i}
                   animate={
                     rolling
                       ? {
-                          x: [i ? 90 : -90, i ? -25 : 25, 0],
+                          x: [(i - 1) * -110, (i - 1) * 30, 0],
                           y: [-70, 25, 0],
-                          rotate: [0, i ? -420 : 420, i ? 360 + tilt[i] : 360 + tilt[i]],
+                          rotate: [0, i % 2 ? -420 : 420, (i % 2 ? 360 : -360) + tilt[i]],
                         }
                       : { rotate: tilt[i] }
                   }
                   transition={
                     rolling
-                      ? { duration: ROLL_MS / 1000, ease: [0.2, 0.8, 0.3, 1] }
+                      ? { duration: ROLL_MS / 1000, ease: [0.2, 0.8, 0.3, 1], delay: i * 0.04 }
                       : { type: "spring", stiffness: 220, damping: 18 }
                   }
                 >
@@ -155,15 +167,15 @@ export function DiceGame({ sponsor }: { sponsor: SponsorInfo | null }) {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   className={`font-display text-lg font-bold ${
-                    outcome.correct ? "text-gold" : "text-red-300"
+                    outcome.collected ? "text-gold" : "text-red-300"
                   }`}
                 >
-                  {outcome.d1} + {outcome.d2} = {outcome.sum}{" "}
-                  {outcome.correct
-                    ? steps >= 7
-                      ? "— staircase complete! 🏆"
-                      : `— correct! Next target: ${DICE_TARGETS[steps]}`
-                    : `— needed ${outcome.target}. Game over.`}
+                  {outcome.d1} + {outcome.d2} + {outcome.d3} = {outcome.sum}{" "}
+                  {outcome.collected
+                    ? outcome.sumsCollected >= DICE_TOTAL_SUMS
+                      ? "— full sweep! 🏆"
+                      : "— new sum, collected!"
+                    : `— already collected. Game over.`}
                 </motion.p>
               ) : (
                 <p className="text-sm text-white/35">{rolling ? "Rolling…" : "Ready when you are."}</p>
@@ -176,7 +188,7 @@ export function DiceGame({ sponsor }: { sponsor: SponsorInfo | null }) {
             disabled={rolling || phase !== "playing"}
             className="btn-gold mt-6 w-full max-w-xs !py-4 !text-lg"
           >
-            {rolling ? "Rolling…" : `🎲 Roll for ${DICE_TARGETS[steps] ?? 2}`}
+            {rolling ? "Rolling…" : "🎲 Roll three dice"}
           </button>
         </div>
       </div>
@@ -186,10 +198,10 @@ export function DiceGame({ sponsor }: { sponsor: SponsorInfo | null }) {
           game={game}
           reason={
             lastLoss
-              ? `Needed ${lastLoss.target}, rolled ${lastLoss.sum}. Game over.`
-              : "Wrong sum. Game over."
+              ? `Rolled ${lastLoss.sum} again — already collected. Game over.`
+              : "Repeated sum. Game over."
           }
-          progressText={`You completed ${steps} / 7 steps. A perfect win is 7 / 7.`}
+          progressText={`You collected ${count} / ${DICE_TOTAL_SUMS} sums. A perfect win sweeps all ${DICE_TOTAL_SUMS}.`}
         />
       )}
     </GameShell>
